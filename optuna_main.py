@@ -183,7 +183,17 @@ def main(cfg: DictConfig) -> None:
     output_folder_path = HydraConfig.get().run.dir
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
-    study = optuna.create_study(direction="maximize")
+    # ローカルフォルダに保存するためのストレージURLを指定します。
+    storage = "sqlite:///experiences/first_version.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+
+    # スタディの作成または既存のスタディのロード
+    study = optuna.create_study(
+        study_name="example-study",
+        storage=storage,
+        direction="maximize",
+        load_if_exists=True,
+    )
+
     # 結果保存用のCSVファイルを初期化
     final_csv = output_folder_path + "/" + tpg_ship_param_log_file_name
 
