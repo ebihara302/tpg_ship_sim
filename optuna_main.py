@@ -158,7 +158,7 @@ def objective(trial):
     # config.tpg_ship.elect_trust_efficiency = trial.suggest_float("elect_trust_efficiency", 0.7, 0.9)
     # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("MCH_to_elect_efficiency", 0.4, 0.6)
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("elect_to_MCH_efficiency", 0.7, 0.9)
-    config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
+    config.tpg_ship.sail_num = trial.suggest_int("sail_num", 3, 30)
     # config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 1000)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
