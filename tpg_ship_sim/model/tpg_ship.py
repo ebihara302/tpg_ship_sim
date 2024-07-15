@@ -26,7 +26,7 @@ class TPG_ship:
 
     属性 :
         max_storage (float) : 台風発電船の蓄電容量の上限値
-        generator_output_w (float) : 台風発電船の定格出力
+        generator_rated_output_w (float) : 台風発電船の定格出力
         max_speed_power (float) : 付加物のない船体を最大船速で進めるのに必要な出力
 
 
@@ -82,8 +82,6 @@ class TPG_ship:
 
     ####################################  パラメータ  ######################################
 
-    max_speed_power = 0
-
     def __init__(
         self,
         initial_position,
@@ -94,20 +92,17 @@ class TPG_ship:
         elect_trust_efficiency,
         MCH_to_elect_efficiency,
         elect_to_MCH_efficiency,
-        generator_output_w,
+        generator_turbine_radius,
         generator_efficiency,
         generator_drag_coefficient,
         generator_pillar_chord,
         generator_pillar_max_tickness,
         generator_pillar_width,
         generator_num,
-        sail_num,
         sail_area,
         sail_steps,
-        sail_weight,
         ship_return_speed_kt,
         ship_max_speed_kt,
-        ship_generate_speed_kt,
         forecast_weight,
         typhoon_effective_range,
         govia_base_judge_energy_storage_per,
@@ -123,20 +118,20 @@ class TPG_ship:
         self.elect_trust_efficiency = elect_trust_efficiency
         self.MCH_to_elect_efficiency = MCH_to_elect_efficiency
         self.elect_to_MCH_efficiency = elect_to_MCH_efficiency
-        self.generator_output_w = generator_output_w
+        self.generator_turbine_radius = generator_turbine_radius
         self.generator_efficiency = generator_efficiency
         self.generator_drag_coefficient = generator_drag_coefficient
         self.generator_pillar_chord = generator_pillar_chord
         self.generator_pillar_max_tickness = generator_pillar_max_tickness
         self.generator_pillar_width = generator_pillar_width
         self.generator_num = generator_num
-        self.sail_num = sail_num
         self.sail_area = sail_area
         self.sail_steps = sail_steps
-        self.sail_weight = sail_weight
+        self.sail_weight = 120 * (self.sail_area / 880)
         self.nomal_ave_speed = ship_return_speed_kt
         self.max_speed = ship_max_speed_kt
-        self.generating_speed_kt = ship_generate_speed_kt
+
+        self.sail_num = self.calculate_sail_num()
 
         self.forecast_weight = forecast_weight
         self.typhoon_effective_range = typhoon_effective_range
@@ -151,6 +146,8 @@ class TPG_ship:
         [ 説明 ]
 
         台風発電船のパラメータをデータフレームとして記録する関数です。
+
+        後述するset_initial_states関数の実行後に実行する必要があります。
 
         ##############################################################################
 
@@ -169,13 +166,14 @@ class TPG_ship:
                 "elect_trust_efficiency": [self.elect_trust_efficiency],
                 "MCH_to_elect_efficiency": [self.MCH_to_elect_efficiency],
                 "elect_to_MCH_efficiency": [self.elect_to_MCH_efficiency],
-                "generator_output_w": [self.generator_output_w],
+                "generator_turbine_radius": [self.generator_turbine_radius],
                 "generator_efficiency": [self.generator_efficiency],
                 "generator_drag_coefficient": [self.generator_drag_coefficient],
                 "generator_pillar_chord": [self.generator_pillar_chord],
                 "generator_pillar_max_tickness": [self.generator_pillar_max_tickness],
                 "generator_pillar_width": [self.generator_pillar_width],
                 "generator_num": [self.generator_num],
+                "generator_rated_output_w": [self.generator_rated_output_w],
                 "sail_num": [self.sail_num],
                 "sail_area": [self.sail_area],
                 "sail_steps": [self.sail_steps],
@@ -204,13 +202,14 @@ class TPG_ship:
                 pl.col("elect_trust_efficiency").cast(pl.Float64),
                 pl.col("MCH_to_elect_efficiency").cast(pl.Float64),
                 pl.col("elect_to_MCH_efficiency").cast(pl.Float64),
-                pl.col("generator_output_w").cast(pl.Float64),
+                pl.col("generator_turbine_radius").cast(pl.Float64),
                 pl.col("generator_efficiency").cast(pl.Float64),
                 pl.col("generator_drag_coefficient").cast(pl.Float64),
                 pl.col("generator_pillar_chord").cast(pl.Float64),
                 pl.col("generator_pillar_max_tickness").cast(pl.Float64),
                 pl.col("generator_pillar_width").cast(pl.Float64),
                 pl.col("generator_num").cast(pl.Int64),
+                pl.col("generator_rated_output_w").cast(pl.Float64),
                 pl.col("sail_num").cast(pl.Int64),
                 pl.col("sail_area").cast(pl.Float64),
                 pl.col("sail_steps").cast(pl.Int64),
@@ -230,7 +229,320 @@ class TPG_ship:
 
     ####################################  状態量  ######################################
 
-    # 状態量の初期値入力
+    # 状態量と__init__で定義されたパラメータから求められる従属量の初期値を設定する関数
+
+    def cal_dwt(self, storage_method, storage):
+        """
+        ############################ def cal_dwt ############################
+
+        [ 説明 ]
+
+        載貨重量トンを算出する関数です。
+
+        ##############################################################################
+
+        引数 :
+            storage_method (int) : 貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+            storage (float) : 貯蔵容量[Wh]
+
+        戻り値 :
+            dwt (float) : 載貨重量トン
+
+        #############################################################################
+        """
+        # 載貨重量トンを算出する。単位はt。
+
+        if storage_method == 1:  # 電気貯蔵
+            # 重量エネルギー密度1000Wh/kgの電池を使うこととする。
+            dwt = storage / 1000 / 1000
+
+        elif storage_method == 2:  # 水素貯蔵
+            # 有機ハイドライドで水素を貯蔵することとする。
+            dwt = storage / 5000 * 0.0898 / 47.4
+
+        else:
+            print("cannot cal")
+
+        return dwt
+
+    def cal_maxspeedpower(
+        self,
+        max_speed,
+        sail_num,
+        sail_weight,
+        storage1,
+        storage1_method,
+        storage2,
+        storage2_method,
+        body_num,
+    ):
+        """
+        ############################ def cal_maxspeedpower ############################
+
+        [ 説明 ]
+
+        最大船速時に船体を進めるのに必要な出力を算出する関数です。
+
+        ##############################################################################
+
+        引数 :
+            max_speed (float) : 最大船速(kt)
+            sail_num (int) : 帆の本数
+            sail_weight (float) : 帆の重量(ton)
+            storage1 (float) : メインストレージの貯蔵容量1[Wh]
+            storage1_method (int) : メインストレージの貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+            storage2 (float) : 電気推進用の貯蔵容量[Wh]
+            storage2_method (int) : 電気推進用の貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+            body_num (int) : 船体の数
+
+        戻り値 :
+            power (float) : 船体を進めるのに必要な出力
+
+        #############################################################################
+        """
+
+        main_storage_dwt = self.cal_dwt(storage1_method, storage1)
+        electric_propulsion_storage_dwt = self.cal_dwt(storage2_method, storage2)
+        sail_weight_sum = sail_weight * sail_num
+
+        sum_dwt_t = main_storage_dwt + electric_propulsion_storage_dwt + sail_weight_sum
+
+        if storage1_method == 1:  # 電気貯蔵
+            # バルカー型
+            k = 1.7
+            power = k * (sum_dwt_t ** (2 / 3)) * (max_speed**3) * body_num
+
+        elif storage1_method == 2:  # 水素貯蔵
+            # タンカー型
+            k = 2.2
+            power = k * (sum_dwt_t ** (2 / 3)) * (max_speed**3) * body_num
+
+        else:
+            print("cannot cal")
+
+        return power
+
+    # 搭載性能の計算
+    def calculate_sail_num(self):
+        """
+        ############################ def calculate_sail_num ############################
+
+        [ 説明 ]
+
+        台風発電船が搭載可能な帆の本数を算出する関数です。
+
+        ##############################################################################
+
+        戻り値 :
+            max_sail_num (int) : 台風発電船が搭載可能な帆の本数
+
+        #############################################################################
+        """
+
+        # ウインドチャレンジャーの帆を基準とする
+        base_sail_area = 880  # 基準帆面積 [m^2]
+        base_sail_width = 15  # 基準帆幅 [m]
+        assumed_num_sails = 30  # 仮の帆の本数
+
+        # 船体の載貨重量トンを計算
+        hull_dwt = self.cal_dwt(self.storage_method, self.max_storage)
+        # バッテリーの重量トンを計算
+        battery_weight_ton = self.cal_dwt(1, self.electric_propulsion_max_storage_wh)
+
+        while True:
+            # 船の総重量(DWT[t])を計算
+            total_ship_weight = (
+                hull_dwt + battery_weight_ton + (assumed_num_sails * self.sail_weight)
+            )
+            total_ship_weight_per_body = total_ship_weight / self.hull_num
+
+            # 甲板面積を計算
+            # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
+            if self.storage_method == 1:  # 電気貯蔵 = バルカー型
+                if total_ship_weight_per_body < 220000:
+                    L_oa = 7.9387 * (total_ship_weight_per_body**0.2996)
+                    B = 1.4257 * (total_ship_weight_per_body**0.2883)
+
+                elif 220000 <= total_ship_weight_per_body < 330000:
+                    L_oa = 139.3148 * (total_ship_weight_per_body**0.069)
+                    B = 13.8365 * (total_ship_weight_per_body**0.1127)
+
+                else:
+                    L_oa = 361.2
+                    B = 65.0
+
+            elif self.storage_method == 2:  # 水素貯蔵 = タンカー型
+                if total_ship_weight_per_body < 20000:
+                    L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
+                    B = 1.4070 * (total_ship_weight_per_body**0.2864)
+
+                elif 20000 <= total_ship_weight_per_body < 280000:
+                    L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
+                    if total_ship_weight_per_body < 40000:
+                        B = 1.4070 * (total_ship_weight_per_body**0.2864)
+                    elif 40000 <= total_ship_weight_per_body < 80000:
+                        B = 32.9
+                    elif 80000 <= total_ship_weight_per_body < 120000:
+                        B = 43.5
+                    elif 120000 <= total_ship_weight_per_body < 200000:
+                        B = 48.9
+                    else:
+                        B = 60.2
+
+                else:
+                    L_oa = 333.7
+                    B = 60.2
+
+            # 甲板面積を算出
+            if self.hull_num == 2:
+                # 船体が2つの場合、Bは3.5倍とする
+                B = B * 3.5
+
+            deck_area = L_oa * B  # 簡易甲板面積 [m^2]
+
+            # 帆の寸法を基準帆から算出
+            scale_factor = (self.sail_area / base_sail_area) ** 0.5
+            sail_width = base_sail_width * scale_factor
+
+            # 甲板面積から搭載できる最大帆数を算出
+            max_sails_by_deck_area = deck_area / (sail_width**2)
+            # 整数に切り下げ
+            max_sails_by_deck_area = int(max_sails_by_deck_area)
+
+            # 仮の帆の本数が搭載可能な最大帆数を超えた場合、仮の本数を減らして再計算
+            if assumed_num_sails > max_sails_by_deck_area:
+                assumed_num_sails = max_sails_by_deck_area
+            else:
+                break
+
+        max_sail_num = max_sails_by_deck_area
+
+        return max_sail_num
+
+    # 発電時の推力性能（発電時の船速）の計算を抗力性能の計算とともに行う
+    def cal_generating_ship_speed(self):
+        """
+        ############################ def cal_generating_ship_speed ############################
+
+        [ 説明 ]
+
+        台風発電船の発電時の推力性能（発電時の船速）を計算する関数です。
+
+        ##############################################################################
+
+        戻り値 :
+            generating_ship_speed_kt (float) : 発電時の船速(kt)
+
+        #############################################################################
+        """
+
+        # 風速から発電船の最大速度を計算する。
+        generating_ship_speed_mps = 0
+
+        # 風で得られる推力の計算。
+        wind_speed = self.generationg_wind_speed_mps  # 風速 [m/s]
+
+        # 60~120度の風向きの場合、風で得られる最大の推力を計算する。
+        max_wind_force = 0
+        wind_directions = np.arange(60, 120, 1)  # [degrees]
+        for wind_direction in wind_directions:
+            # 横風
+            lift_coefficient = 1.8
+            drag_coefficient = 0.4
+            lift = (
+                0.5
+                * self.air_density
+                * wind_speed**2
+                * self.sail_area
+                * lift_coefficient
+                * self.sail_num
+            )
+            drag = (
+                0.5
+                * self.air_density
+                * wind_speed**2
+                * self.sail_area
+                * drag_coefficient
+                * self.sail_num
+            )
+            # 推力は船の進行方向が正、横力は進行方向右向きが正
+            force_angle = np.radians(wind_direction)
+            # 風で得られる推力
+            wind_force = lift * np.sin(force_angle) + drag * np.cos(force_angle)
+            # 最大の推力を取得
+            if wind_force > max_wind_force:
+                max_wind_force = wind_force
+
+        # 動いている水中タービンの抵抗係数の計算(船速の2乗をかけると抵抗が計算できる係数)
+        # タービン抵抗係数(こちらは船速が決まっている時に使われる係数)
+        turbine_drag_coefficient_1 = 0.3
+        # 定格出力からタービン回転面積の逆算
+        turbine_area = self.generator_turbine_radius**2 * np.pi
+        # タービン抵抗係数の計算
+        turbine_drag_coefficient = (
+            self.generator_num
+            * 0.5
+            * self.sea_density
+            * turbine_area
+            * turbine_drag_coefficient_1
+        )
+
+        # 最大船速時の船体の抵抗（仕事率）の計算
+        self.max_speed_power = self.cal_maxspeedpower(
+            self.max_speed,
+            self.sail_num,
+            self.sail_weight,
+            self.max_storage,
+            self.storage_method,
+            self.electric_propulsion_max_storage_wh,
+            1,
+            self.hull_num,
+        )
+        # 船体の抵抗係数(船速の2乗をかけると抵抗が計算できる係数)
+        hull_drag_coefficient = self.max_speed_power / self.max_speed**3
+
+        # 船体の抵抗とタービンの抵抗の和と風で得られる最大推力が釣り合う船速を計算
+        generating_ship_speed_mps = np.sqrt(
+            (max_wind_force) / (turbine_drag_coefficient + hull_drag_coefficient)
+        )
+        # ktに変換
+        generating_ship_speed_kt = generating_ship_speed_mps * 1.94384
+
+        # 最終結果の反映
+        return generating_ship_speed_kt
+
+    # 発電性能（水中タービンの定格出力）を計算
+    def calculate_generater_rated_output(self):
+        """
+        ############################ def calculate_generater_rated_output ############################
+
+        [ 説明 ]
+
+        台風発電船の水中タービンの定格出力を計算する関数です。
+
+        ##############################################################################
+
+        戻り値 :
+            rated_output_w (float) : 水中タービンの定格出力(W)
+
+        #############################################################################
+        """
+
+        # タービン回転面積
+        turbine_area = self.generator_turbine_radius**2 * np.pi
+        # 定格出力の計算
+        rated_output_w = (
+            self.generator_num
+            * 0.5
+            * self.sea_density
+            * self.generating_speed_mps**3
+            * turbine_area
+            * self.generator_efficiency
+        )
+
+        return rated_output_w
+
+    # 状態量の初期値入力と従属量の入力
     def set_initial_states(self):
         """
         ############################ def set_initial_states ############################
@@ -248,6 +560,7 @@ class TPG_ship:
         self.air_density = 1.225  # kg/m^3
         self.sea_density = 1025.0  # kg/m^3
         self.kinematic_viscosity = 1.139 * 10**-6  # m^2/s
+
         # 台風発電船の受ける風パラメータ
         self.wind_u = 0
         self.wind_v = 0
@@ -295,9 +608,11 @@ class TPG_ship:
         self.standby_via_base = 0
 
         # 発電船発電時の状態量
-        self.generating_speed_mps = self.generating_speed_kt * 0.514444
         self.generationg_wind_speed_mps = 25
         self.generationg_wind_dirrection_deg = 80.0
+        self.generating_speed_kt = self.cal_generating_ship_speed()
+        self.generating_speed_mps = self.generating_speed_kt * 0.514444
+        self.generator_rated_output_w = self.calculate_generater_rated_output()
 
     def set_outputs(self):
         """
@@ -914,7 +1229,7 @@ class TPG_ship:
     #######################################################################################
 
     ###########################  発電機に関する設定  #####################################
-    def calculate_generator_drag_work(self):
+    def calculate_stopped_generator_drag_work(self):
         """
         ############################ def calculate_generater_drag_work ############################
 
@@ -980,13 +1295,7 @@ class TPG_ship:
 
         if self.GS_gene_judge == 1:
             # 発電機のタービン回転面積
-            s_pg = self.generator_output_w / (
-                self.generator_num
-                * 0.5
-                * rho
-                * self.generating_speed_mps**3
-                * self.generator_efficiency
-            )
+            s_pg = self.generator_turbine_radius**2 * math.pi
             # 発電機のタービン1機あたりの抵抗
             da = (
                 0.5
@@ -1026,7 +1335,9 @@ class TPG_ship:
             wind_data, time_step
         )  # [Wh]
         self.generator_drag_work = (
-            self.generator_num * self.calculate_generator_drag_work() * time_step
+            self.generator_num
+            * self.calculate_stopped_generator_drag_work()
+            * time_step
         )  # [Wh]
 
         # 船体抵抗による仕事量
@@ -2105,7 +2416,7 @@ class TPG_ship:
         )
 
         # その時刻〜次の時刻での発電量計算
-        self.gene_elect = self.generator_output_w * time_step * self.GS_gene_judge
+        self.gene_elect = self.generator_rated_output_w * time_step * self.GS_gene_judge
 
         # 電気推進機用の電力供給・消費
         if self.GS_loss_judge == 1:  # 消費している場合

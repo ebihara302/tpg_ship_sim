@@ -41,20 +41,17 @@ def run_simulation(cfg):
     elect_trust_efficiency = cfg.tpg_ship.elect_trust_efficiency
     MCH_to_elect_efficiency = cfg.tpg_ship.MCH_to_elect_efficiency
     elect_to_MCH_efficiency = cfg.tpg_ship.elect_to_MCH_efficiency
-    generator_output_w = cfg.tpg_ship.generator_output_w
+    generator_turbine_radius = cfg.tpg_ship.generator_turbine_radius
     generator_efficiency = cfg.tpg_ship.generator_efficiency
     generator_drag_coefficient = cfg.tpg_ship.generator_drag_coefficient
     generator_pillar_chord = cfg.tpg_ship.generator_pillar_chord
     generator_pillar_max_tickness = cfg.tpg_ship.generator_pillar_max_tickness
-    generator_pillar_width = cfg.tpg_ship.generator_pillar_width
+    generator_pillar_width = generator_turbine_radius + 1
     generator_num = cfg.tpg_ship.generator_num
-    sail_num = cfg.tpg_ship.sail_num
     sail_area = cfg.tpg_ship.sail_area
     sail_steps = cfg.tpg_ship.sail_steps
-    sail_weight = cfg.tpg_ship.sail_weight
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
-    ship_generate_speed_kt = cfg.tpg_ship.ship_generate_speed_kt
     forecast_weight = cfg.tpg_ship.forecast_weight
     typhoon_effective_range = cfg.tpg_ship.typhoon_effective_range
     govia_base_judge_energy_storage_per = (
@@ -71,20 +68,17 @@ def run_simulation(cfg):
         elect_trust_efficiency,
         MCH_to_elect_efficiency,
         elect_to_MCH_efficiency,
-        generator_output_w,
+        generator_turbine_radius,
         generator_efficiency,
         generator_drag_coefficient,
         generator_pillar_chord,
         generator_pillar_max_tickness,
         generator_pillar_width,
         generator_num,
-        sail_num,
         sail_area,
         sail_steps,
-        sail_weight,
         ship_return_speed_kt,
         ship_max_speed_kt,
-        ship_generate_speed_kt,
         forecast_weight,
         typhoon_effective_range,
         govia_base_judge_energy_storage_per,
@@ -147,10 +141,10 @@ def run_simulation(cfg):
 def objective(trial):
     config = hydra.compose(config_name="config")
 
-    # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
+    config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
     config.tpg_ship.max_storage_wh = trial.suggest_int(
-        "max_storage_wh", 50000000000, 300000000000
+        "max_storage_wh", 50000000000, 400000000000
     )
     config.tpg_ship.electric_propulsion_max_storage_wh = trial.suggest_int(
         "electric_propulsion_max_storage_wh", 20000000000, 60000000000
@@ -158,11 +152,14 @@ def objective(trial):
     # config.tpg_ship.elect_trust_efficiency = trial.suggest_float("elect_trust_efficiency", 0.7, 0.9)
     # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("MCH_to_elect_efficiency", 0.4, 0.6)
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("elect_to_MCH_efficiency", 0.7, 0.9)
-    config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
-    # config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 1000)
+    # config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
+    config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 2000)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "ship_return_speed_kt", 4, 15
+    )
+    config.tpg_ship.generator_turbine_radius = trial.suggest_int(
+        "generator_turbine_radius", 5, 20
     )
     config.tpg_ship.forecast_weight = trial.suggest_int("forecast_weight", 10, 90)
     # config.tpg_ship.typhoon_effective_range = trial.suggest_int("typhoon_effective_range", 50, 150)
@@ -184,7 +181,7 @@ def main(cfg: DictConfig) -> None:
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/first_version.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+    storage = "sqlite:///experiences/second_version.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
 
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
@@ -207,13 +204,14 @@ def main(cfg: DictConfig) -> None:
         ("elect_trust_efficiency", pl.Float64),
         ("MCH_to_elect_efficiency", pl.Float64),
         ("elect_to_MCH_efficiency", pl.Float64),
-        ("generator_output_w", pl.Float64),
+        ("generator_turbine_radius", pl.Float64),
         ("generator_efficiency", pl.Float64),
         ("generator_drag_coefficient", pl.Float64),
         ("generator_pillar_chord", pl.Float64),
         ("generator_pillar_max_tickness", pl.Float64),
         ("generator_pillar_width", pl.Float64),
         ("generator_num", pl.Int64),
+        ("generator_rated_output_w", pl.Float64),
         ("sail_num", pl.Int64),
         ("sail_area", pl.Float64),
         ("sail_steps", pl.Int64),
@@ -234,7 +232,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    study.optimize(objective, n_trials=100, callbacks=[TqdmCallback(total=100)])
+    study.optimize(objective, n_trials=500, callbacks=[TqdmCallback(total=500)])
 
     # 最良の試行を出力
     print("Best trial:")

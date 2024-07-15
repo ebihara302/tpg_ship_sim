@@ -13,10 +13,13 @@ from tpg_ship_sim.model import forecaster, storage_base, support_ship, tpg_ship
 def main(cfg: DictConfig) -> None:
 
     typhoon_data_path = cfg.env.typhoon_data_path
+    simulation_start_time = cfg.env.simulation_start_time
+    simulation_end_time = cfg.env.simulation_end_time
 
     output_folder_path = HydraConfig.get().run.dir
 
     tpg_ship_log_file_name = cfg.output_env.tpg_ship_log_file_name
+    tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
     storage_base_log_file_name = cfg.output_env.storage_base_log_file_name
     support_ship_1_log_file_name = cfg.output_env.support_ship_1_log_file_name
     support_ship_2_log_file_name = cfg.output_env.support_ship_2_log_file_name
@@ -35,26 +38,24 @@ def main(cfg: DictConfig) -> None:
     elect_trust_efficiency = cfg.tpg_ship.elect_trust_efficiency
     MCH_to_elect_efficiency = cfg.tpg_ship.MCH_to_elect_efficiency
     elect_to_MCH_efficiency = cfg.tpg_ship.elect_to_MCH_efficiency
-    generator_output_w = cfg.tpg_ship.generator_output_w
+    generator_turbine_radius = cfg.tpg_ship.generator_turbine_radius
     generator_efficiency = cfg.tpg_ship.generator_efficiency
     generator_drag_coefficient = cfg.tpg_ship.generator_drag_coefficient
     generator_pillar_chord = cfg.tpg_ship.generator_pillar_chord
     generator_pillar_max_tickness = cfg.tpg_ship.generator_pillar_max_tickness
-    generator_pillar_width = cfg.tpg_ship.generator_pillar_width
+    generator_pillar_width = generator_turbine_radius + 1
     generator_num = cfg.tpg_ship.generator_num
-    sail_num = cfg.tpg_ship.sail_num
     sail_area = cfg.tpg_ship.sail_area
     sail_steps = cfg.tpg_ship.sail_steps
-    sail_weight = cfg.tpg_ship.sail_weight
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
-    ship_generate_speed_kt = cfg.tpg_ship.ship_generate_speed_kt
     forecast_weight = cfg.tpg_ship.forecast_weight
     typhoon_effective_range = cfg.tpg_ship.typhoon_effective_range
     govia_base_judge_energy_storage_per = (
         cfg.tpg_ship.govia_base_judge_energy_storage_per
     )
     judge_time_times = cfg.tpg_ship.judge_time_times
+
     tpg_ship_1 = tpg_ship.TPG_ship(
         initial_position,
         hull_num,
@@ -64,20 +65,17 @@ def main(cfg: DictConfig) -> None:
         elect_trust_efficiency,
         MCH_to_elect_efficiency,
         elect_to_MCH_efficiency,
-        generator_output_w,
+        generator_turbine_radius,
         generator_efficiency,
         generator_drag_coefficient,
         generator_pillar_chord,
         generator_pillar_max_tickness,
         generator_pillar_width,
         generator_num,
-        sail_num,
         sail_area,
         sail_steps,
-        sail_weight,
         ship_return_speed_kt,
         ship_max_speed_kt,
-        ship_generate_speed_kt,
         forecast_weight,
         typhoon_effective_range,
         govia_base_judge_energy_storage_per,
@@ -115,6 +113,8 @@ def main(cfg: DictConfig) -> None:
     )
 
     simulator.simulate(
+        simulation_start_time,
+        simulation_end_time,
         tpg_ship_1,  # TPG ship
         typhoon_path_forecaster,  # Forecaster
         st_base,  # Storage base
@@ -122,6 +122,7 @@ def main(cfg: DictConfig) -> None:
         support_ship_2,  # Support ship 2
         typhoon_data_path,
         output_folder_path + "/" + tpg_ship_log_file_name,
+        output_folder_path + "/" + tpg_ship_param_log_file_name,
         output_folder_path + "/" + storage_base_log_file_name,
         output_folder_path + "/" + support_ship_1_log_file_name,
         output_folder_path + "/" + support_ship_2_log_file_name,
