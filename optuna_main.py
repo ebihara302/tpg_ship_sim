@@ -195,9 +195,11 @@ def main(cfg: DictConfig) -> None:
     final_csv = output_folder_path + "/" + tpg_ship_param_log_file_name
 
     columns = [
-        ("ship_lat", pl.Float64),
-        ("ship_lon", pl.Float64),
+        ("Base_lat", pl.Float64),
+        ("Base_lon", pl.Float64),
         ("hull_num", pl.Int64),
+        ("hull_L_oa", pl.Float64),
+        ("hull_B", pl.Float64),
         ("storage_method", pl.Int64),
         ("max_storage", pl.Float64),
         ("electric_propulsion_max_storage_wh", pl.Float64),
@@ -213,9 +215,13 @@ def main(cfg: DictConfig) -> None:
         ("generator_num", pl.Int64),
         ("generator_rated_output_w", pl.Float64),
         ("sail_num", pl.Int64),
+        ("max_sail_num", pl.Int64),
         ("sail_area", pl.Float64),
         ("sail_steps", pl.Int64),
         ("sail_weight", pl.Float64),
+        ("num_sails_per_row", pl.Int64),
+        ("num_sails_rows", pl.Int64),
+        ("sail_min_space", pl.Float64),
         ("nomal_ave_speed", pl.Float64),
         ("max_speed", pl.Float64),
         ("generating_speed_kt", pl.Float64),
@@ -223,6 +229,7 @@ def main(cfg: DictConfig) -> None:
         ("typhoon_effective_range", pl.Float64),
         ("govia_base_judge_energy_storage_per", pl.Float64),
         ("judge_time_times", pl.Float64),
+        ("sail_penalty", pl.Float64),
         ("total_gene_elect", pl.Float64),
     ]
 

@@ -131,8 +131,6 @@ class TPG_ship:
         self.nomal_ave_speed = ship_return_speed_kt
         self.max_speed = ship_max_speed_kt
 
-        self.sail_num = self.calculate_sail_num()
-
         self.forecast_weight = forecast_weight
         self.typhoon_effective_range = typhoon_effective_range
         self.govia_base_judge_energy_storage_per = govia_base_judge_energy_storage_per
@@ -155,9 +153,11 @@ class TPG_ship:
 
         data = pl.DataFrame(
             {
-                "ship_lat": [self.ship_lat],
-                "ship_lon": [self.ship_lon],
+                "Base_lat": [self.base_lat],
+                "Base_lon": [self.base_lon],
                 "hull_num": [self.hull_num],
+                "hull_L_oa": [self.hull_L_oa],
+                "hull_B": [self.hull_B],
                 "storage_method": [self.storage_method],
                 "max_storage": [self.max_storage],
                 "electric_propulsion_max_storage_wh": [
@@ -175,9 +175,13 @@ class TPG_ship:
                 "generator_num": [self.generator_num],
                 "generator_rated_output_w": [self.generator_rated_output_w],
                 "sail_num": [self.sail_num],
+                "max_sail_num": [self.max_sail_num],
                 "sail_area": [self.sail_area],
                 "sail_steps": [self.sail_steps],
                 "sail_weight": [self.sail_weight],
+                "num_sails_per_row": [self.num_sails_per_row],
+                "num_sails_rows": [self.num_sails_rows],
+                "sail_min_space": [self.sail_min_space],
                 "nomal_ave_speed": [self.nomal_ave_speed],
                 "max_speed": [self.max_speed],
                 "generating_speed_kt": [self.generating_speed_kt],
@@ -187,15 +191,18 @@ class TPG_ship:
                     self.govia_base_judge_energy_storage_per
                 ],
                 "judge_time_times": [self.judge_time_times],
+                "sail_penalty": [self.sail_penalty],
                 "total_gene_elect": self.total_gene_elect_list[-1],
             }
         )
 
         data = data.with_columns(
             [
-                pl.col("ship_lat").cast(pl.Float64),
-                pl.col("ship_lon").cast(pl.Float64),
+                pl.col("Base_lat").cast(pl.Float64),
+                pl.col("Base_lon").cast(pl.Float64),
                 pl.col("hull_num").cast(pl.Int64),
+                pl.col("hull_L_oa").cast(pl.Float64),
+                pl.col("hull_B").cast(pl.Float64),
                 pl.col("storage_method").cast(pl.Int64),
                 pl.col("max_storage").cast(pl.Float64),
                 pl.col("electric_propulsion_max_storage_wh").cast(pl.Float64),
@@ -211,9 +218,13 @@ class TPG_ship:
                 pl.col("generator_num").cast(pl.Int64),
                 pl.col("generator_rated_output_w").cast(pl.Float64),
                 pl.col("sail_num").cast(pl.Int64),
+                pl.col("max_sail_num").cast(pl.Int64),
                 pl.col("sail_area").cast(pl.Float64),
                 pl.col("sail_steps").cast(pl.Int64),
                 pl.col("sail_weight").cast(pl.Float64),
+                pl.col("num_sails_per_row").cast(pl.Int64),
+                pl.col("num_sails_rows").cast(pl.Int64),
+                pl.col("sail_min_space").cast(pl.Float64),
                 pl.col("nomal_ave_speed").cast(pl.Float64),
                 pl.col("max_speed").cast(pl.Float64),
                 pl.col("generating_speed_kt").cast(pl.Float64),
@@ -221,6 +232,7 @@ class TPG_ship:
                 pl.col("typhoon_effective_range").cast(pl.Float64),
                 pl.col("govia_base_judge_energy_storage_per").cast(pl.Float64),
                 pl.col("judge_time_times").cast(pl.Float64),
+                pl.col("sail_penalty").cast(pl.Float64),
                 pl.col("total_gene_elect").cast(pl.Float64),
             ]
         )
@@ -323,7 +335,7 @@ class TPG_ship:
         return power
 
     # 搭載性能の計算
-    def calculate_sail_num(self):
+    def calculate_max_sail_num(self):
         """
         ############################ def calculate_sail_num ############################
 
@@ -393,6 +405,10 @@ class TPG_ship:
                     L_oa = 333.7
                     B = 60.2
 
+            # L_oa,Bの記録
+            self.hull_L_oa = L_oa
+            self.hull_B = B
+
             # 甲板面積を算出
             if self.hull_num == 2:
                 # 船体が2つの場合、Bは3.5倍とする
@@ -404,8 +420,13 @@ class TPG_ship:
             scale_factor = (self.sail_area / base_sail_area) ** 0.5
             sail_width = base_sail_width * scale_factor
 
-            # 甲板面積から搭載できる最大帆数を算出
-            max_sails_by_deck_area = deck_area / (sail_width**2)
+            if B < sail_width:
+                # 甲板幅が帆幅より狭い場合、船長に合わせて帆の本数を算出
+                max_sails_by_deck_area = L_oa / sail_width
+            else:
+                # 甲板面積から搭載できる最大帆数を算出
+                max_sails_by_deck_area = deck_area / (sail_width**2)
+
             # 整数に切り下げ
             max_sails_by_deck_area = int(max_sails_by_deck_area)
 
@@ -420,7 +441,7 @@ class TPG_ship:
         return max_sail_num
 
     # 発電時の推力性能（発電時の船速）の計算を抗力性能の計算とともに行う
-    def cal_generating_ship_speed(self):
+    def cal_generating_ship_speed(self, sail_num):
         """
         ############################ def cal_generating_ship_speed ############################
 
@@ -455,7 +476,7 @@ class TPG_ship:
                 * wind_speed**2
                 * self.sail_area
                 * lift_coefficient
-                * self.sail_num
+                * sail_num
             )
             drag = (
                 0.5
@@ -463,7 +484,7 @@ class TPG_ship:
                 * wind_speed**2
                 * self.sail_area
                 * drag_coefficient
-                * self.sail_num
+                * sail_num
             )
             # 推力は船の進行方向が正、横力は進行方向右向きが正
             force_angle = np.radians(wind_direction)
@@ -473,9 +494,14 @@ class TPG_ship:
             if wind_force > max_wind_force:
                 max_wind_force = wind_force
 
+        # 帆の密度に対するペナルティを計算
+        self.calculate_sail_penalty(sail_num)
+
+        max_wind_force = max_wind_force * self.sail_penalty
+
         # 動いている水中タービンの抵抗係数の計算(船速の2乗をかけると抵抗が計算できる係数)
         # タービン抵抗係数(こちらは船速が決まっている時に使われる係数)
-        turbine_drag_coefficient_1 = 0.3
+        turbine_drag_coefficient_1 = self.generator_drag_coefficient
         # 定格出力からタービン回転面積の逆算
         turbine_area = self.generator_turbine_radius**2 * np.pi
         # タービン抵抗係数の計算
@@ -490,7 +516,7 @@ class TPG_ship:
         # 最大船速時の船体の抵抗（仕事率）の計算
         self.max_speed_power = self.cal_maxspeedpower(
             self.max_speed,
-            self.sail_num,
+            sail_num,
             self.sail_weight,
             self.max_storage,
             self.storage_method,
@@ -500,6 +526,8 @@ class TPG_ship:
         )
         # 船体の抵抗係数(船速の2乗をかけると抵抗が計算できる係数)
         hull_drag_coefficient = self.max_speed_power / self.max_speed**3
+        # hull_drag_coefficientがkt基準なので、m/sに変換
+        hull_drag_coefficient = hull_drag_coefficient / 1.94384**3
 
         # 船体の抵抗とタービンの抵抗の和と風で得られる最大推力が釣り合う船速を計算
         generating_ship_speed_mps = np.sqrt(
@@ -510,6 +538,144 @@ class TPG_ship:
 
         # 最終結果の反映
         return generating_ship_speed_kt
+
+    # 帆の密度（間隔）からペナルティを計算
+    def calculate_sail_penalty(self, sail_num):
+        """
+        ############################ def calculate_sail_penalty ############################
+
+        [ 説明 ]
+
+        任意の帆の数と船の横幅、全長を用いて、帆の等間隔配置を計算し、
+
+        台風発電船の帆の密度（間隔）からペナルティを計算する関数です。
+
+        ##############################################################################
+
+        戻り値:
+        optimal_min_distance (float): 最適な帆同士の最小距離 [m]
+        optimal_spacing_penalty (float): 最適な帆の間隔によるペナルティ
+        message (str): 完全に等間隔に並べられない場合の理由と改善策（本プログラム内では出力しないデバック用出力）
+        """
+
+        base_sail_area = 880
+        base_sail_width = 15
+        scale_factor = (self.sail_area / base_sail_area) ** 0.5
+        sail_width = base_sail_width * scale_factor
+
+        B = self.hull_B
+        L_oa = self.hull_L_oa
+
+        # 別の関数で制約がかかるのでコメントアウト
+
+        # if sail_width > B:
+        #     max_sails_by_deck_area = int(L_oa / sail_width)
+
+        # else:
+        #     max_sails_by_deck_area = int(L_oa*B / (sail_width**2))
+
+        # if sail_num > max_sails_by_deck_area:
+        #     return None, None, f"指定された帆の数 ({sail_num}) は、甲板の面積に対して多すぎます。最大搭載可能帆数は {max_sails_by_deck_area} です。"
+
+        optimal_min_distance = 0
+        optimal_spacing_penalty = 0
+        optimal_num_sails_per_row = 0
+        optimal_num_rows = 0
+        # message = None
+
+        if sail_num == 1:
+            optimal_min_distance = 999
+            optimal_spacing_penalty = 1
+            optimal_num_sails_per_row = 1
+            optimal_num_rows = 1
+
+        else:
+            # 可能なすべてのnum_sails_per_rowの値を試す
+            for num_sails_per_row in range(1, sail_num + 1):
+                if num_sails_per_row * sail_width > B and B >= sail_width:
+                    continue
+
+                if B < sail_width:
+                    num_sails_per_row = 1
+
+                num_rows = (sail_num + num_sails_per_row - 1) // num_sails_per_row
+                min_distance_x = B / num_sails_per_row if num_sails_per_row != 1 else B
+                min_distance_y = L_oa / num_rows
+
+                if num_sails_per_row == 1:
+                    min_distance = min_distance_y
+                else:
+                    min_distance = min(min_distance_x, min_distance_y)
+
+                if min_distance >= 2 * sail_width:
+                    spacing_penalty = 1
+                elif min_distance <= sail_width:
+                    spacing_penalty = 0.6
+                else:
+                    slope = (1 - 0.6) / (2 * sail_width - sail_width)
+                    spacing_penalty = 1 - slope * (2 * sail_width - min_distance)
+
+                # 同じ最小距離なら、列数が少ない方を優先
+                if (min_distance > optimal_min_distance) or (
+                    min_distance == optimal_min_distance
+                    and num_sails_per_row < optimal_num_sails_per_row
+                ):
+                    optimal_min_distance = min_distance
+                    optimal_spacing_penalty = spacing_penalty
+                    optimal_num_sails_per_row = num_sails_per_row
+                    optimal_num_rows = num_rows
+
+        # if sail_num % optimal_num_sails_per_row != 0:
+        #     message = (
+        #         f"帆の本数 ({sail_num}) は完全には等間隔に並べられませんが、"
+        #         f"{optimal_num_sails_per_row}列に対して最終行には{sail_num % optimal_num_sails_per_row}本配置されます。"
+        #     )
+
+        # # 帆の本数と列数を表示
+        # print(f"帆の本数: {sail_num},帆の幅: {sail_width} , 列数: {optimal_num_sails_per_row}, 行数: {optimal_num_rows}")
+        # return optimal_min_distance, message
+
+        self.num_sails_per_row = optimal_num_sails_per_row  # 1行に配置する帆の本数
+        self.num_sails_rows = optimal_num_rows  # 帆の行数
+        self.sail_min_space = optimal_min_distance  # 帆の最小間隔
+        self.sail_penalty = optimal_spacing_penalty  # 帆の間隔によるペナルティ
+
+    def find_optimal_sail_num_and_speed(self, limit_speed_kt):
+        """
+        ############################ def find_optimal_sail_num_and_speed ############################
+
+        [ 説明 ]
+
+        台風発電船の帆の本数と発電時の船速を計算する関数です。
+
+        ##############################################################################
+
+        引数 :
+            limit_speed_kt (float) : 船の最大速度(kt)
+
+        戻り値 :
+            optimal_sail_num (int) : 最適な帆の本数
+
+        #############################################################################
+        """
+
+        max_sail_num = self.calculate_max_sail_num()
+        self.max_sail_num = max_sail_num
+
+        optimal_sail_num = 0
+        generating_ship_speed_kt = 0
+
+        for sail_num in range(1, max_sail_num + 1):
+            current_speed = self.cal_generating_ship_speed(sail_num)
+
+            if current_speed > limit_speed_kt:
+                break
+            elif current_speed > generating_ship_speed_kt:
+                optimal_sail_num = sail_num
+                generating_ship_speed_kt = current_speed
+
+        self.sail_num = optimal_sail_num
+        self.generating_speed_kt = generating_ship_speed_kt
 
     # 発電性能（水中タービンの定格出力）を計算
     def calculate_generater_rated_output(self):
@@ -528,6 +694,9 @@ class TPG_ship:
         #############################################################################
         """
 
+        # 発電時の船速をktからm/sに変換
+        self.generating_speed_mps = self.generating_speed_kt * 0.514444
+
         # タービン回転面積
         turbine_area = self.generator_turbine_radius**2 * np.pi
         # 定格出力の計算
@@ -541,6 +710,24 @@ class TPG_ship:
         )
 
         return rated_output_w
+
+    # 帆の本数、発電時船速、定格出力を計算して、反映する関数
+    def calculate_sail_num_and_generating_ship_speed_and_generater_rated_output(self):
+        """
+        ############################ def calculate_sail_num_and_generating_ship_speed_and_generater_rated_output ############################
+
+        [ 説明 ]
+
+        台風発電船の帆の本数、発電時船速、定格出力を計算して、反映する関数です。
+
+        ##############################################################################
+
+        """
+        # 帆の本数と発電時の推力性能（発電時の船速）の計算
+        self.find_optimal_sail_num_and_speed(self.limit_ship_speed_kt)
+
+        # 定格出力を計算
+        self.generator_rated_output_w = self.calculate_generater_rated_output()
 
     # 状態量の初期値入力と従属量の入力
     def set_initial_states(self):
@@ -608,11 +795,12 @@ class TPG_ship:
         self.standby_via_base = 0
 
         # 発電船発電時の状態量
+        self.limit_ship_speed_kt = (
+            52  # 発電時の船速の上限値(kt) 双胴フェリー船の最高速度を参照
+        )
         self.generationg_wind_speed_mps = 25
         self.generationg_wind_dirrection_deg = 80.0
-        self.generating_speed_kt = self.cal_generating_ship_speed()
-        self.generating_speed_mps = self.generating_speed_kt * 0.514444
-        self.generator_rated_output_w = self.calculate_generater_rated_output()
+        self.calculate_sail_num_and_generating_ship_speed_and_generater_rated_output()  # 帆の本数と発電時の推力性能（発電時の船速）の計算を行う
 
     def set_outputs(self):
         """
@@ -785,6 +973,24 @@ class TPG_ship:
         self.trust_power_storage_list.append(float(self.electric_propulsion_storage_wh))
 
     def get_outputs(self, unix_list, date_list):
+        """
+        ############################ def get_outputs ############################
+
+        [ 説明 ]
+
+        台風発電船の各種出力を記録したリストをデータフレームに変換する関数です。
+
+        ##############################################################################
+
+        引数 :
+            unix_list : unix時間のリスト
+            date_list : 日時のリスト
+
+        戻り値 :
+            data : 台風発電船の各種出力を記録したデータフレーム
+
+        #############################################################################
+        """
 
         data = pl.DataFrame(
             {
@@ -994,7 +1200,7 @@ class TPG_ship:
         #############################################################################
         """
         force = drag
-        force_trust = force * np.cos(np.radians(wind_direction))
+        force_trust = force * np.cos(np.radians(wind_direction)) * self.sail_penalty
         # force_side = force * np.sin(np.radians(wind_direction))
         return force_trust  # , force_side
 
@@ -1069,7 +1275,13 @@ class TPG_ship:
         # 今回は横力(force_side)を無視して推進力のみを計算
 
         # 仕事量の計算[Wh]
-        wind_work = force_trust * ship_speed_mps * time_interval * self.sail_num
+        wind_work = (
+            (force_trust)
+            * self.sail_penalty
+            * ship_speed_mps
+            * time_interval
+            * self.sail_num
+        )
 
         # self.ship_speed_sub_list.append(ship_speed_mps)
         # self.wind_speed_sub_list.append(wind_speed)
