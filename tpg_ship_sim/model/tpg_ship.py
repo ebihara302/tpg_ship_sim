@@ -176,6 +176,7 @@ class TPG_ship:
                 "generator_rated_output_w": [self.generator_rated_output_w],
                 "sail_num": [self.sail_num],
                 "max_sail_num": [self.max_sail_num],
+                "sail_width": [self.sail_width],
                 "sail_area": [self.sail_area],
                 "sail_steps": [self.sail_steps],
                 "sail_weight": [self.sail_weight],
@@ -219,6 +220,7 @@ class TPG_ship:
                 pl.col("generator_rated_output_w").cast(pl.Float64),
                 pl.col("sail_num").cast(pl.Int64),
                 pl.col("max_sail_num").cast(pl.Int64),
+                pl.col("sail_width").cast(pl.Float64),
                 pl.col("sail_area").cast(pl.Float64),
                 pl.col("sail_steps").cast(pl.Int64),
                 pl.col("sail_weight").cast(pl.Float64),
@@ -354,14 +356,23 @@ class TPG_ship:
         # ウインドチャレンジャーの帆を基準とする
         base_sail_area = 880  # 基準帆面積 [m^2]
         base_sail_width = 15  # 基準帆幅 [m]
-        assumed_num_sails = 30  # 仮の帆の本数
+        assumed_num_sails = 100  # 帆の仮想本数
 
         # 船体の載貨重量トンを計算
         hull_dwt = self.cal_dwt(self.storage_method, self.max_storage)
         # バッテリーの重量トンを計算
         battery_weight_ton = self.cal_dwt(1, self.electric_propulsion_max_storage_wh)
 
+        # 1. 帆の本数を仮定して、重量から船の寸法を計算する
+        # 2. 計算した船の寸法から、甲板面積を算出
+        # 3. 甲板面積と帆の幅から搭載可能な最大帆数を算出
+        # 4. 仮の帆の本数と搭載可能な最大帆数を比較する
+        # 5. 仮の帆の本数を更新し、帆の本数が等しくなるまで繰り返す
+
         while True:
+
+            # 1. 帆の本数を仮定して、重量から船の寸法を計算する
+
             # 船の総重量(DWT[t])を計算
             total_ship_weight = (
                 hull_dwt + battery_weight_ton + (assumed_num_sails * self.sail_weight)
@@ -405,6 +416,8 @@ class TPG_ship:
                     L_oa = 333.7
                     B = 60.2
 
+            # 2. 計算した船の寸法から、甲板面積を算出
+
             # L_oa,Bの記録
             self.hull_L_oa = L_oa
             self.hull_B = B
@@ -413,12 +426,16 @@ class TPG_ship:
             if self.hull_num == 2:
                 # 船体が2つの場合、Bは3.5倍とする
                 B = B * 3.5
+                self.hull_B = B
 
             deck_area = L_oa * B  # 簡易甲板面積 [m^2]
+
+            # 3. 甲板面積と帆の幅から搭載可能な最大帆数を算出
 
             # 帆の寸法を基準帆から算出
             scale_factor = (self.sail_area / base_sail_area) ** 0.5
             sail_width = base_sail_width * scale_factor
+            self.sail_width = sail_width
 
             if B < sail_width:
                 # 甲板幅が帆幅より狭い場合、船長に合わせて帆の本数を算出
@@ -430,13 +447,24 @@ class TPG_ship:
             # 整数に切り下げ
             max_sails_by_deck_area = int(max_sails_by_deck_area)
 
-            # 仮の帆の本数が搭載可能な最大帆数を超えた場合、仮の本数を減らして再計算
-            if assumed_num_sails > max_sails_by_deck_area:
-                assumed_num_sails = max_sails_by_deck_area
-            else:
+            # 4. 仮の帆の本数と搭載可能な最大帆数を比較する
+            # 5. 仮の帆の本数を更新し、帆の本数が等しくなるまで繰り返す
+
+            if assumed_num_sails == max_sails_by_deck_area:
                 break
+            else:
+                assumed_num_sails = max_sails_by_deck_area
 
         max_sail_num = max_sails_by_deck_area
+
+        # デバック用出力
+        # L_oa,B,sail_width,max_sails_by_deck_areaの出力
+        # print(
+        #     f"L_oa: {L_oa}",
+        #     f"B: {B}",
+        #     f"sail_width: {sail_width}",
+        #     f"max_sails_by_deck_area: {max_sails_by_deck_area}",
+        # )
 
         return max_sail_num
 
@@ -563,19 +591,25 @@ class TPG_ship:
         scale_factor = (self.sail_area / base_sail_area) ** 0.5
         sail_width = base_sail_width * scale_factor
 
+        self.sail_width = sail_width
+
         B = self.hull_B
         L_oa = self.hull_L_oa
 
         # 別の関数で制約がかかるのでコメントアウト
 
-        # if sail_width > B:
-        #     max_sails_by_deck_area = int(L_oa / sail_width)
+        if sail_width > B:
+            max_sails_by_deck_area = int(L_oa / sail_width)
 
-        # else:
-        #     max_sails_by_deck_area = int(L_oa*B / (sail_width**2))
+        else:
+            max_sails_by_deck_area = int(L_oa * B / (sail_width**2))
 
-        # if sail_num > max_sails_by_deck_area:
-        #     return None, None, f"指定された帆の数 ({sail_num}) は、甲板の面積に対して多すぎます。最大搭載可能帆数は {max_sails_by_deck_area} です。"
+        if sail_num > max_sails_by_deck_area:
+            return (
+                None,
+                None,
+                f"指定された帆の数 ({sail_num}) は、甲板の面積に対して多すぎます。最大搭載可能帆数は {max_sails_by_deck_area} です。",
+            )
 
         optimal_min_distance = 0
         optimal_spacing_penalty = 0
@@ -659,8 +693,9 @@ class TPG_ship:
         #############################################################################
         """
 
-        max_sail_num = self.calculate_max_sail_num()
-        self.max_sail_num = max_sail_num
+        self.max_sail_num = self.calculate_max_sail_num()
+
+        max_sail_num = self.max_sail_num
 
         optimal_sail_num = 0
         generating_ship_speed_kt = 0
@@ -669,6 +704,8 @@ class TPG_ship:
             current_speed = self.cal_generating_ship_speed(sail_num)
 
             if current_speed > limit_speed_kt:
+                break
+            elif self.sail_min_space < self.sail_width:
                 break
             elif current_speed > generating_ship_speed_kt:
                 optimal_sail_num = sail_num
