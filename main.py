@@ -46,6 +46,7 @@ def main(cfg: DictConfig) -> None:
     generator_pillar_width = generator_turbine_radius + 1
     generator_num = cfg.tpg_ship.generator_num
     sail_area = cfg.tpg_ship.sail_area
+    sail_space = cfg.tpg_ship.sail_space
     sail_steps = cfg.tpg_ship.sail_steps
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
@@ -73,6 +74,7 @@ def main(cfg: DictConfig) -> None:
         generator_pillar_width,
         generator_num,
         sail_area,
+        sail_space,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,

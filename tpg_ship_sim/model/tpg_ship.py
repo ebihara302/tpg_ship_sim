@@ -100,6 +100,7 @@ class TPG_ship:
         generator_pillar_width,
         generator_num,
         sail_area,
+        sail_space,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,
@@ -126,6 +127,7 @@ class TPG_ship:
         self.generator_pillar_width = generator_pillar_width
         self.generator_num = generator_num
         self.sail_area = sail_area
+        self.sail_space = sail_space
         self.sail_steps = sail_steps
         self.sail_weight = 120 * (self.sail_area / 880)
         self.nomal_ave_speed = ship_return_speed_kt
@@ -178,11 +180,11 @@ class TPG_ship:
                 "max_sail_num": [self.max_sail_num],
                 "sail_width": [self.sail_width],
                 "sail_area": [self.sail_area],
+                "sail_space": [self.sail_space],
                 "sail_steps": [self.sail_steps],
                 "sail_weight": [self.sail_weight],
                 "num_sails_per_row": [self.num_sails_per_row],
                 "num_sails_rows": [self.num_sails_rows],
-                "sail_min_space": [self.sail_min_space],
                 "nomal_ave_speed": [self.nomal_ave_speed],
                 "max_speed": [self.max_speed],
                 "generating_speed_kt": [self.generating_speed_kt],
@@ -222,11 +224,11 @@ class TPG_ship:
                 pl.col("max_sail_num").cast(pl.Int64),
                 pl.col("sail_width").cast(pl.Float64),
                 pl.col("sail_area").cast(pl.Float64),
+                pl.col("sail_space").cast(pl.Float64),
                 pl.col("sail_steps").cast(pl.Int64),
                 pl.col("sail_weight").cast(pl.Float64),
                 pl.col("num_sails_per_row").cast(pl.Int64),
                 pl.col("num_sails_rows").cast(pl.Int64),
-                pl.col("sail_min_space").cast(pl.Float64),
                 pl.col("nomal_ave_speed").cast(pl.Float64),
                 pl.col("max_speed").cast(pl.Float64),
                 pl.col("generating_speed_kt").cast(pl.Float64),
@@ -436,13 +438,15 @@ class TPG_ship:
             scale_factor = (self.sail_area / base_sail_area) ** 0.5
             sail_width = base_sail_width * scale_factor
             self.sail_width = sail_width
+            # 帆の搭載間隔を指定
+            sail_space_per_sail = self.sail_width * self.sail_space
 
-            if B < sail_width:
+            if B < sail_space_per_sail:
                 # 甲板幅が帆幅より狭い場合、船長に合わせて帆の本数を算出
-                max_sails_by_deck_area = L_oa / sail_width
+                max_sails_by_deck_area = L_oa / sail_space_per_sail
             else:
                 # 甲板面積から搭載できる最大帆数を算出
-                max_sails_by_deck_area = deck_area / (sail_width**2)
+                max_sails_by_deck_area = deck_area / (sail_space_per_sail**2)
 
             # 整数に切り下げ
             max_sails_by_deck_area = int(max_sails_by_deck_area)
@@ -581,138 +585,36 @@ class TPG_ship:
         ##############################################################################
 
         戻り値:
-        optimal_min_distance (float): 最適な帆同士の最小距離 [m]
-        optimal_spacing_penalty (float): 最適な帆の間隔によるペナルティ
+        spacing_penalty (float): 帆の間隔によるペナルティ
         message (str): 完全に等間隔に並べられない場合の理由と改善策（本プログラム内では出力しないデバック用出力）
         """
 
-        base_sail_area = 880
-        base_sail_width = 15
-        scale_factor = (self.sail_area / base_sail_area) ** 0.5
-        sail_width = base_sail_width * scale_factor
-
-        self.sail_width = sail_width
+        sail_width = self.sail_width
 
         B = self.hull_B
         L_oa = self.hull_L_oa
 
-        # 別の関数で制約がかかるのでコメントアウト
+        sail_space = self.sail_space
 
-        if sail_width > B:
-            max_sails_by_deck_area = int(L_oa / sail_width)
-
+        spacing_penalty = 0
+        if B > sail_width * sail_space:
+            optimal_num_sails_per_row = B / (sail_width * sail_space)
         else:
-            max_sails_by_deck_area = int(L_oa * B / (sail_width**2))
-
-        if sail_num > max_sails_by_deck_area:
-            return (
-                None,
-                None,
-                f"指定された帆の数 ({sail_num}) は、甲板の面積に対して多すぎます。最大搭載可能帆数は {max_sails_by_deck_area} です。",
-            )
-
-        optimal_min_distance = 0
-        optimal_spacing_penalty = 0
-        optimal_num_sails_per_row = 0
-        optimal_num_rows = 0
-        # message = None
-
-        if sail_num == 1:
-            optimal_min_distance = 999
-            optimal_spacing_penalty = 1
             optimal_num_sails_per_row = 1
-            optimal_num_rows = 1
 
+        optimal_num_rows = L_oa / (sail_width * sail_space)
+
+        # 帆の密度に対するペナルティを計算
+        if sail_space >= 2:
+            spacing_penalty = 1
+        elif sail_space <= 1:
+            spacing_penalty = 0.6
         else:
-            # 可能なすべてのnum_sails_per_rowの値を試す
-            for num_sails_per_row in range(1, sail_num + 1):
-                if num_sails_per_row * sail_width > B and B >= sail_width:
-                    continue
-
-                if B < sail_width:
-                    num_sails_per_row = 1
-
-                num_rows = (sail_num + num_sails_per_row - 1) // num_sails_per_row
-                min_distance_x = B / num_sails_per_row if num_sails_per_row != 1 else B
-                min_distance_y = L_oa / num_rows
-
-                if num_sails_per_row == 1:
-                    min_distance = min_distance_y
-                else:
-                    min_distance = min(min_distance_x, min_distance_y)
-
-                if min_distance >= 2 * sail_width:
-                    spacing_penalty = 1
-                elif min_distance <= sail_width:
-                    spacing_penalty = 0.6
-                else:
-                    slope = (1 - 0.6) / (2 * sail_width - sail_width)
-                    spacing_penalty = 1 - slope * (2 * sail_width - min_distance)
-
-                # 同じ最小距離なら、列数が少ない方を優先
-                if (min_distance > optimal_min_distance) or (
-                    min_distance == optimal_min_distance
-                    and num_sails_per_row < optimal_num_sails_per_row
-                ):
-                    optimal_min_distance = min_distance
-                    optimal_spacing_penalty = spacing_penalty
-                    optimal_num_sails_per_row = num_sails_per_row
-                    optimal_num_rows = num_rows
-
-        # if sail_num % optimal_num_sails_per_row != 0:
-        #     message = (
-        #         f"帆の本数 ({sail_num}) は完全には等間隔に並べられませんが、"
-        #         f"{optimal_num_sails_per_row}列に対して最終行には{sail_num % optimal_num_sails_per_row}本配置されます。"
-        #     )
-
-        # # 帆の本数と列数を表示
-        # print(f"帆の本数: {sail_num},帆の幅: {sail_width} , 列数: {optimal_num_sails_per_row}, 行数: {optimal_num_rows}")
-        # return optimal_min_distance, message
+            spacing_penalty = 0.6 - (0.4 * (1 - sail_space))
 
         self.num_sails_per_row = optimal_num_sails_per_row  # 1行に配置する帆の本数
         self.num_sails_rows = optimal_num_rows  # 帆の行数
-        self.sail_min_space = optimal_min_distance  # 帆の最小間隔
-        self.sail_penalty = optimal_spacing_penalty  # 帆の間隔によるペナルティ
-
-    def find_optimal_sail_num_and_speed(self, limit_speed_kt):
-        """
-        ############################ def find_optimal_sail_num_and_speed ############################
-
-        [ 説明 ]
-
-        台風発電船の帆の本数と発電時の船速を計算する関数です。
-
-        ##############################################################################
-
-        引数 :
-            limit_speed_kt (float) : 船の最大速度(kt)
-
-        戻り値 :
-            optimal_sail_num (int) : 最適な帆の本数
-
-        #############################################################################
-        """
-
-        self.max_sail_num = self.calculate_max_sail_num()
-
-        max_sail_num = self.max_sail_num
-
-        optimal_sail_num = 0
-        generating_ship_speed_kt = 0
-
-        for sail_num in range(1, max_sail_num + 1):
-            current_speed = self.cal_generating_ship_speed(sail_num)
-
-            if current_speed > limit_speed_kt:
-                break
-            elif self.sail_min_space < self.sail_width:
-                break
-            elif current_speed > generating_ship_speed_kt:
-                optimal_sail_num = sail_num
-                generating_ship_speed_kt = current_speed
-
-        self.sail_num = optimal_sail_num
-        self.generating_speed_kt = generating_ship_speed_kt
+        self.sail_penalty = spacing_penalty  # 帆の間隔によるペナルティ
 
     # 発電性能（水中タービンの定格出力）を計算
     def calculate_generater_rated_output(self):
@@ -760,8 +662,13 @@ class TPG_ship:
         ##############################################################################
 
         """
-        # 帆の本数と発電時の推力性能（発電時の船速）の計算
-        self.find_optimal_sail_num_and_speed(self.limit_ship_speed_kt)
+        # 帆の本数の計算
+        self.sail_num = self.calculate_max_sail_num()
+
+        # 発電時の船速の計算
+        self.generating_speed_kt = self.cal_generating_ship_speed(self.sail_num)
+        if self.generating_speed_kt > self.limit_ship_speed_kt:
+            self.generating_speed_kt = self.limit_ship_speed_kt
 
         # 定格出力を計算
         self.generator_rated_output_w = self.calculate_generater_rated_output()

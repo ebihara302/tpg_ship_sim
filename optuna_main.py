@@ -49,6 +49,7 @@ def run_simulation(cfg):
     generator_pillar_width = generator_turbine_radius + 1
     generator_num = cfg.tpg_ship.generator_num
     sail_area = cfg.tpg_ship.sail_area
+    sail_space = cfg.tpg_ship.sail_space
     sail_steps = cfg.tpg_ship.sail_steps
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
@@ -76,6 +77,7 @@ def run_simulation(cfg):
         generator_pillar_width,
         generator_num,
         sail_area,
+        sail_space,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,
@@ -154,6 +156,7 @@ def objective(trial):
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("elect_to_MCH_efficiency", 0.7, 0.9)
     # config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
     config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 2000)
+    config.tpg_ship.sail_space = trial.suggest_float("sail_space", 1, 3)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "ship_return_speed_kt", 4, 15
@@ -223,7 +226,6 @@ def main(cfg: DictConfig) -> None:
         ("sail_weight", pl.Float64),
         ("num_sails_per_row", pl.Int64),
         ("num_sails_rows", pl.Int64),
-        ("sail_min_space", pl.Float64),
         ("nomal_ave_speed", pl.Float64),
         ("max_speed", pl.Float64),
         ("generating_speed_kt", pl.Float64),
