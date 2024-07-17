@@ -217,6 +217,7 @@ def main(cfg: DictConfig) -> None:
         ("sail_num", pl.Int64),
         ("max_sail_num", pl.Int64),
         ("sail_width", pl.Float64),
+        ("sail_space", pl.Float64),
         ("sail_area", pl.Float64),
         ("sail_steps", pl.Int64),
         ("sail_weight", pl.Float64),
