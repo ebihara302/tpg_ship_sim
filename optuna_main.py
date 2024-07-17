@@ -218,7 +218,6 @@ def main(cfg: DictConfig) -> None:
         ("generator_num", pl.Int64),
         ("generator_rated_output_w", pl.Float64),
         ("sail_num", pl.Int64),
-        ("max_sail_num", pl.Int64),
         ("sail_width", pl.Float64),
         ("sail_space", pl.Float64),
         ("sail_area", pl.Float64),
