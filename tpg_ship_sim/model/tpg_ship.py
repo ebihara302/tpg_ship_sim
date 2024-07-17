@@ -442,12 +442,15 @@ class TPG_ship:
             if B < sail_space_per_sail:
                 # 甲板幅が帆幅より狭い場合、船長に合わせて帆の本数を算出
                 max_sails_by_deck_area = L_oa / sail_space_per_sail
+                # 本数を四捨五入
+                max_sails_by_deck_area = round(max_sails_by_deck_area)
             else:
                 # 甲板面積から搭載できる最大帆数を算出
-                max_sails_by_deck_area = deck_area / (sail_space_per_sail**2)
-
-            # 整数に切り下げ
-            max_sails_by_deck_area = int(max_sails_by_deck_area)
+                max_sails_by_deck_area_L = L_oa / sail_space_per_sail
+                max_sails_by_deck_area_B = B / sail_space_per_sail
+                max_sails_by_deck_area = round(max_sails_by_deck_area_L) * round(
+                    max_sails_by_deck_area_B
+                )
 
             # 4. 仮の帆の本数と搭載可能な最大帆数を比較する
             # 5. 仮の帆の本数を更新し、帆の本数が等しくなるまで繰り返す
