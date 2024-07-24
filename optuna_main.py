@@ -146,7 +146,7 @@ def objective(trial):
     config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
     config.tpg_ship.max_storage_wh = trial.suggest_int(
-        "max_storage_wh", 50000000000, 400000000000
+        "max_storage_wh", 50000000000, 500000000000
     )
     config.tpg_ship.electric_propulsion_max_storage_wh = trial.suggest_int(
         "electric_propulsion_max_storage_wh", 20000000000, 60000000000
@@ -155,8 +155,8 @@ def objective(trial):
     # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("MCH_to_elect_efficiency", 0.4, 0.6)
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("elect_to_MCH_efficiency", 0.7, 0.9)
     # config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
-    config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 2000)
-    config.tpg_ship.sail_space = trial.suggest_float("sail_space", 1, 3)
+    config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 3000)
+    # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 1, 3)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "ship_return_speed_kt", 4, 15
@@ -184,7 +184,7 @@ def main(cfg: DictConfig) -> None:
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/second_version.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+    storage = "sqlite:///experiences/sail_space_2.0_version.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
 
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
@@ -242,7 +242,10 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    study.optimize(objective, n_trials=500, callbacks=[TqdmCallback(total=500)])
+    trial_num = 300
+    study.optimize(
+        objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
+    )
 
     # 最良の試行を出力
     print("Best trial:")

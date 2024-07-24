@@ -599,11 +599,11 @@ class TPG_ship:
 
         spacing_penalty = 0
         if B > sail_width * sail_space:
-            optimal_num_sails_per_row = B / (sail_width * sail_space)
+            optimal_num_sails_per_row = round(B / (sail_width * sail_space))
         else:
             optimal_num_sails_per_row = 1
 
-        optimal_num_rows = L_oa / (sail_width * sail_space)
+        optimal_num_rows = round(L_oa / (sail_width * sail_space))
 
         # 帆の密度に対するペナルティを計算
         if sail_space >= 2:
