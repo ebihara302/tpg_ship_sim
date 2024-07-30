@@ -26,7 +26,10 @@ RUN python -m pip install numpy==1.26.0 \
     selenium \
     SciencePlots \
     opencv-python \
-    jupyterlab
+    jupyterlab \
+    plotly \
+    scikit-learn \
+    kaleido \
 
 RUN pip install tqdm
 
