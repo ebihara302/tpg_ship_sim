@@ -1,9 +1,12 @@
 import os
 
 import hydra
+import kaleido
 import optuna
 import optuna.visualization as vis
+import plotly
 import plotly.io as pio
+import sklearn
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 
@@ -16,7 +19,7 @@ def main(cfg: DictConfig) -> None:
     # SQLiteデータベースからStudyを読み込む
     study = optuna.load_study(
         study_name="example-study",
-        storage="sqlite:///experiences/sail_space_2.0_version.db",
+        storage="sqlite:///experiences/limit_speed_32kt_sail_space_2.0_version.db",
     )
 
     output_folder_path = HydraConfig.get().run.dir

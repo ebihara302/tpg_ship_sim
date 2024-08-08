@@ -741,7 +741,8 @@ class TPG_ship:
 
         # 発電船発電時の状態量
         self.limit_ship_speed_kt = (
-            52  # 発電時の船速の上限値(kt) 双胴フェリー船の最高速度を参照
+            # 52  # 発電時の船速の上限値(kt) 双胴フェリー船の最高速度を参照
+            32  # 発電時の船速の上限値(kt) 一般的なコンテナ船の上限速度を参照
         )
         self.generationg_wind_speed_mps = 25
         self.generationg_wind_dirrection_deg = 80.0
