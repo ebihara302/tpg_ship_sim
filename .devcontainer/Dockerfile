@@ -29,7 +29,8 @@ RUN python -m pip install numpy==1.26.0 \
     jupyterlab \
     plotly \
     scikit-learn \
-    kaleido \
+    kaleido
+
 
 RUN pip install tqdm
 
