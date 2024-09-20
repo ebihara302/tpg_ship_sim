@@ -171,6 +171,12 @@ def objective(trial):
     )
     config.tpg_ship.judge_time_times = trial.suggest_float("judge_time_times", 1.0, 2.0)
 
+    # 拠点位置に関する変更
+    base_lat = trial.suggest_int("Base_lat", 0, 30)
+    base_lon = trial.suggest_int("Base_lon", 134, 180)
+    config.storage_base.locate = [base_lat, base_lon]
+    config.tpg_ship.initial_position = config.storage_base.locate
+
     # シミュレーションを実行
     total_generation = run_simulation(config)
 
