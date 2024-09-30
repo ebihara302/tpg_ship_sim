@@ -560,7 +560,7 @@ class TPG_ship:
         # 船体の抵抗係数(船速の2乗をかけると抵抗が計算できる係数)
         hull_drag_coefficient = self.max_speed_power / self.max_speed**3
         # hull_drag_coefficientがkt基準なので、m/sに変換
-        hull_drag_coefficient = hull_drag_coefficient / 1.94384**3
+        hull_drag_coefficient = hull_drag_coefficient * 1.94384**3
 
         # 船体の抵抗とタービンの抵抗の和と風で得られる最大推力が釣り合う船速を計算
         generating_ship_speed_mps = np.sqrt(

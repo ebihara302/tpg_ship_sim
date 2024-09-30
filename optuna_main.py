@@ -143,7 +143,7 @@ def run_simulation(cfg):
 def objective(trial):
     config = hydra.compose(config_name="config")
 
-    config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
+    # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
     config.tpg_ship.max_storage_wh = trial.suggest_int(
         "max_storage_wh", 100000000000, 800000000000
@@ -190,7 +190,7 @@ def main(cfg: DictConfig) -> None:
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/limit_speed_32kt_sail_space_2.0_version.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+    storage = "sqlite:///experiences/catmaran_limit_speed_32kt_sail_space_2.0_version_journal.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
 
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(

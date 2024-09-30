@@ -19,7 +19,7 @@ def main(cfg: DictConfig) -> None:
     # SQLiteデータベースからStudyを読み込む
     study = optuna.load_study(
         study_name="example-study",
-        storage="sqlite:///experiences/limit_speed_32kt_sail_space_2.0_version.db",
+        storage="sqlite:///experiences/limit_speed_32kt_sail_space_2.0_version_journal.db",
     )
 
     output_folder_path = HydraConfig.get().run.dir
