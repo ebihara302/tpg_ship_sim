@@ -163,10 +163,10 @@ def run_simulations_for_sensitivity_analysis(cfg, param_min, param_max, step, x)
 @hydra.main(config_name="config", version_base=None, config_path="conf")
 def main(cfg: DictConfig) -> None:
 
-    x = 100  # stepが整数のときは1、0.1にするときは10、0.01にするときは100にする
-    param_min = 11  # 720 * 10**9
-    param_max = 13  # 740 * 10**9
-    step = 5  # 10**9  # 小数点の刻み幅にしたいときはxを調整する
+    x = 10  # stepが整数のときは1、0.1にするときは10、0.01にするときは100にする
+    param_min = 14  # 720 * 10**9
+    param_max = 18  # 740 * 10**9
+    step = 2  # 10**9  # 小数点の刻み幅にしたいときはxを調整する
 
     # 結果保存用のCSVファイルを初期化
     output_folder_path = HydraConfig.get().run.dir

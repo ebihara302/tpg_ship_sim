@@ -6,31 +6,31 @@ env:
   
 tpg_ship:
   #TPG ship performance model
-  initial_position: [24, 153] # lat, lon
+  initial_position: [10, 156] # lat, lon
   hull_num: 2 # 船体の数
   storage_method: 2 # 1: 電気貯蔵, 2: MCH貯蔵
-  max_storage_wh: 728782002120 # 台風発電船の蓄電容量[Wh]
-  electric_propulsion_max_storage_wh: 26887208126 # 電気推進機用の蓄電池容量[Wh]
+  max_storage_wh: 516654176039 # 台風発電船の蓄電容量[Wh]
+  electric_propulsion_max_storage_wh: 37253546701 # 電気推進機用の蓄電池容量[Wh]
   elect_trust_efficiency: 0.83 # 電気推進機の効率
   MCH_to_elect_efficiency: 0.5 # MCHから電気への変換効率
   elect_to_MCH_efficiency: 0.8 # 電気からMCHへの変換効率
-  generator_turbine_radius: 12 # 発電機のタービンの半径[m]
+  generator_turbine_radius: 16 # 発電機のタービンの半径[m]
   generator_efficiency: 0.3 # 発電機の効率
   generator_drag_coefficient: 0.3 # 発電機の発電時の抗力係数
   generator_pillar_chord: 5 # 発電機支柱断面の流線型物体のコード長[m]
   generator_pillar_max_tickness: 1 # 発電機支柱断面の流線型物体の最大厚さ[m]
-  generator_pillar_width: 13 # 発電機支柱の幅(船体から飛び出ている長さ)[m]
+  generator_pillar_width: 17 # 発電機支柱の幅(船体から飛び出ている長さ)[m]
   generator_num: 2 # 発電機の数
-  sail_area: 3618 # 帆の面積[m^2]
+  sail_area: 4575 # 帆の面積[m^2]
   sail_space: 2
-  sail_steps: 4 # 帆の段数
-  ship_return_speed_kt: 9 # 拠点帰港時の船速[kt]
+  sail_steps: 5 # 帆の段数
+  ship_return_speed_kt: 6 # 拠点帰港時の船速[kt]
   ship_max_speed_kt: 20 # 台風発電船の最大船速[kt]
   #TPG ship operational rule model
   forecast_weight: 48 # 台風の評価数値の計算用重み 「評価数値　＝　予想発電時間＊(forecast_weight) - 台風補足時間＊(100 - forecast_weight)」
   typhoon_effective_range: 100 # 台風発電船が台風で発電できる台風中心からの距離[km]
-  govia_base_judge_energy_storage_per: 42 # 蓄電量がこの値を下回ると寄港判断を行う[%]
-  judge_time_times: 1.554964461 # 台風に追いつけるとみなす時間（目的地への台風の到着時間＊judge_time_times）の設定
+  govia_base_judge_energy_storage_per: 39 # 蓄電量がこの値を下回ると寄港判断を行う[%]
+  judge_time_times: 1.03300061067396 # 台風に追いつけるとみなす時間（目的地への台風の到着時間＊judge_time_times）の設定
 
 
 forecaster:
@@ -38,7 +38,7 @@ forecaster:
   forecast_error_slope: 0.0 # 予報誤差（実際は誤差を計算するための一次関数の傾き）
 
 storage_base:
-  locate: [24, 153] # lat, lon
+  locate: [10, 156] # lat, lon
   max_storage_wh: 210000000000 # Wh
 
 support_ship_1:
