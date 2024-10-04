@@ -172,10 +172,10 @@ def objective(trial):
     config.tpg_ship.judge_time_times = trial.suggest_float("judge_time_times", 1.0, 2.0)
 
     # 拠点位置に関する変更
-    base_lat = trial.suggest_int("Base_lat", 0, 30)
-    base_lon = trial.suggest_int("Base_lon", 134, 180)
-    config.storage_base.locate = [base_lat, base_lon]
-    config.tpg_ship.initial_position = config.storage_base.locate
+    # base_lat = trial.suggest_int("Base_lat", 0, 30)
+    # base_lon = trial.suggest_int("Base_lon", 134, 180)
+    # config.storage_base.locate = [base_lat, base_lon]
+    # config.tpg_ship.initial_position = config.storage_base.locate
 
     # シミュレーションを実行
     total_generation = run_simulation(config)
@@ -190,7 +190,7 @@ def main(cfg: DictConfig) -> None:
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/catmaran_limit_speed_32kt_sail_space_2.0_version_journal.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+    storage = "sqlite:///experiences/catmaran_journal_first_casestudy.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
 
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
@@ -248,7 +248,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 400
+    trial_num = 500
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )

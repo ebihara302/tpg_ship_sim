@@ -6,7 +6,7 @@ env:
   
 tpg_ship:
   #TPG ship performance model
-  initial_position: [10, 156] # lat, lon
+  initial_position: [24.29, 153.98] # lat, lon
   hull_num: 2 # 船体の数
   storage_method: 2 # 1: 電気貯蔵, 2: MCH貯蔵
   max_storage_wh: 516654176039 # 台風発電船の蓄電容量[Wh]
@@ -38,7 +38,7 @@ forecaster:
   forecast_error_slope: 0.0 # 予報誤差（実際は誤差を計算するための一次関数の傾き）
 
 storage_base:
-  locate: [10, 156] # lat, lon
+  locate: [24.29, 153.98] # lat, lon
   max_storage_wh: 210000000000 # Wh
 
 support_ship_1:
