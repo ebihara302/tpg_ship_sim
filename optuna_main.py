@@ -145,18 +145,26 @@ def objective(trial):
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
-    config.tpg_ship.max_storage_wh = trial.suggest_int(
-        "max_storage_wh", 100000000000, 800000000000
+
+    max_storage_GWh = trial.suggest_int(
+        "max_storage_GWh", 50, 800
+    )  # max_storage_whの刻み幅は10^9とする
+    config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
+
+    EP_max_storage_GWh_10 = trial.suggest_int(
+        "EP_max_storage_GWh_10", 50, 800
+    )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
+    config.tpg_ship.electric_propulsion_max_storage_wh = (
+        EP_max_storage_GWh_10 * 100000000
     )
-    config.tpg_ship.electric_propulsion_max_storage_wh = trial.suggest_int(
-        "electric_propulsion_max_storage_wh", 20000000000, 80000000000
-    )
+
     # config.tpg_ship.elect_trust_efficiency = trial.suggest_float("elect_trust_efficiency", 0.7, 0.9)
     # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("MCH_to_elect_efficiency", 0.4, 0.6)
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("elect_to_MCH_efficiency", 0.7, 0.9)
     # config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
-    config.tpg_ship.sail_area = trial.suggest_int("sail_area", 700, 5000)
-    # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 1, 3)
+    sail_area_100m2 = trial.suggest_int("sail_area_every_100m2", 1, 100)
+    config.tpg_ship.sail_area = sail_area_100m2 * 100
+    config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "ship_return_speed_kt", 4, 20
@@ -190,7 +198,7 @@ def main(cfg: DictConfig) -> None:
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/catmaran_journal_first_casestudy.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+    storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
 
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(

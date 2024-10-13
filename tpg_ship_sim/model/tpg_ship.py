@@ -339,7 +339,7 @@ class TPG_ship:
     # 搭載性能の計算
     def calculate_max_sail_num(self):
         """
-        ############################ def calculate_sail_num ############################
+        ############################ def calculate_max_sail_num ############################
 
         [ 説明 ]
 
@@ -526,6 +526,7 @@ class TPG_ship:
             # 最大の推力を取得
             if wind_force > max_wind_force:
                 max_wind_force = wind_force
+                self.max_wind_force_direction = wind_direction
 
         # 帆の密度に対するペナルティを計算
         self.calculate_sail_penalty(sail_num)
@@ -568,6 +569,11 @@ class TPG_ship:
         )
         # ktに変換
         generating_ship_speed_kt = generating_ship_speed_mps * 1.94384
+
+        self.tpgship_generating_lift = max_wind_force
+        self.tpgship_generating_drag = (
+            turbine_drag_coefficient + hull_drag_coefficient
+        ) * generating_ship_speed_mps**2
 
         # 最終結果の反映
         return generating_ship_speed_kt
