@@ -45,6 +45,7 @@ def run_simulation(cfg):
     generator_num = cfg.tpg_ship.generator_num
     sail_area = cfg.tpg_ship.sail_area
     sail_space = cfg.tpg_ship.sail_space
+    sail_num = cfg.tpg_ship.sail_num
     sail_steps = cfg.tpg_ship.sail_steps
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
@@ -73,6 +74,7 @@ def run_simulation(cfg):
         generator_num,
         sail_area,
         sail_space,
+        sail_num,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,

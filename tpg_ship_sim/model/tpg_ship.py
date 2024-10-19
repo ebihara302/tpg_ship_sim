@@ -101,6 +101,7 @@ class TPG_ship:
         generator_num,
         sail_area,
         sail_space,
+        sail_num,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,
@@ -129,6 +130,7 @@ class TPG_ship:
         self.sail_area = sail_area
         self.sail_space = sail_space
         self.sail_steps = sail_steps
+        self.sail_num = sail_num
         self.sail_weight = 120 * (self.sail_area / 880)
         self.nomal_ave_speed = ship_return_speed_kt
         self.max_speed = ship_max_speed_kt
@@ -319,17 +321,21 @@ class TPG_ship:
         electric_propulsion_storage_dwt = self.cal_dwt(storage2_method, storage2)
         sail_weight_sum = sail_weight * sail_num
 
+        self.main_storage_weight = main_storage_dwt
+        self.ep_storage_weight = electric_propulsion_storage_dwt
+        self.sails_weight = sail_weight_sum
+
         sum_dwt_t = main_storage_dwt + electric_propulsion_storage_dwt + sail_weight_sum
 
         if storage1_method == 1:  # 電気貯蔵
             # バルカー型
             k = 1.7
-            power = k * (sum_dwt_t ** (2 / 3)) * (max_speed**3) * body_num
+            power = k * ((sum_dwt_t / body_num) ** (2 / 3)) * (max_speed**3) * body_num
 
         elif storage1_method == 2:  # 水素貯蔵
             # タンカー型
             k = 2.2
-            power = k * (sum_dwt_t ** (2 / 3)) * (max_speed**3) * body_num
+            power = k * ((sum_dwt_t / body_num) ** (2 / 3)) * (max_speed**3) * body_num
 
         else:
             print("cannot cal")
@@ -527,6 +533,8 @@ class TPG_ship:
             if wind_force > max_wind_force:
                 max_wind_force = wind_force
                 self.max_wind_force_direction = wind_direction
+                self.sails_lift = lift
+                self.sails_drag = drag
 
         # 帆の密度に対するペナルティを計算
         self.calculate_sail_penalty(sail_num)
@@ -601,7 +609,13 @@ class TPG_ship:
         B = self.hull_B
         L_oa = self.hull_L_oa
 
-        sail_space = self.sail_space
+        max_sail_num = self.calculate_max_sail_num()
+
+        if self.sail_num == max_sail_num:
+            sail_space = self.sail_space
+        else:
+            # B*L_oaの長方形内に幅sail_widthの帆をsail_num本、等間隔で並べた時の帆の間隔を計算
+            sail_space = sqrt(B * L_oa / sail_num) / sail_width
 
         spacing_penalty = 0
         if B > sail_width * sail_space:
@@ -669,8 +683,10 @@ class TPG_ship:
         ##############################################################################
 
         """
-        # 帆の本数の計算
-        self.sail_num = self.calculate_max_sail_num()
+        # 帆の本数のチェック
+        max_sail_num = self.calculate_max_sail_num()
+        if self.sail_num > max_sail_num:
+            self.sail_num = max_sail_num
 
         # 発電時の船速の計算
         self.generating_speed_kt = self.cal_generating_ship_speed(self.sail_num)
@@ -748,7 +764,8 @@ class TPG_ship:
         # 発電船発電時の状態量
         self.limit_ship_speed_kt = (
             # 52  # 発電時の船速の上限値(kt) 双胴フェリー船の最高速度を参照
-            32  # 発電時の船速の上限値(kt) 一般的なコンテナ船の上限速度を参照
+            # 32  # 発電時の船速の上限値(kt) 一般的なコンテナ船の上限速度を参照
+            22  # 発電時の船速の上限値(kt) 一般的な貨物船の上限速度を参照
         )
         self.generationg_wind_speed_mps = 25
         self.generationg_wind_dirrection_deg = 80.0

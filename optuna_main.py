@@ -20,6 +20,178 @@ class TqdmCallback(object):
         self.pbar.update(1)
 
 
+# 硬翼帆本数を硬翼帆密度と硬翼帆面積の従属変数にした場合の必要関数
+def cal_dwt(storage_method, storage):
+    """
+    ############################ def cal_dwt ############################
+
+    [ 説明 ]
+
+    載貨重量トンを算出する関数です。
+
+    ##############################################################################
+
+    引数 :
+        storage_method (int) : 貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+        storage (float) : 貯蔵容量[Wh]
+
+    戻り値 :
+        dwt (float) : 載貨重量トン
+
+    #############################################################################
+    """
+    # 載貨重量トンを算出する。単位はt。
+
+    if storage_method == 1:  # 電気貯蔵
+        # 重量エネルギー密度1000Wh/kgの電池を使うこととする。
+        dwt = storage / 1000 / 1000
+
+    elif storage_method == 2:  # 水素貯蔵
+        # 有機ハイドライドで水素を貯蔵することとする。
+        dwt = storage / 5000 * 0.0898 / 47.4
+
+    else:
+        print("cannot cal")
+
+    return dwt
+
+
+def calculate_max_sail_num(
+    storage_method,
+    max_storage,
+    electric_propulsion_max_storage_wh,
+    hull_num,
+    sail_area,
+    sail_space,
+):
+    """
+    ############################ def calculate_max_sail_num ############################
+
+    [ 説明 ]
+
+    台風発電船が搭載可能な帆の本数を算出する関数です。
+
+    ##############################################################################
+
+    戻り値 :
+        max_sail_num (int) : 台風発電船が搭載可能な帆の本数
+
+    #############################################################################
+    """
+
+    # ウインドチャレンジャーの帆を基準とする
+    base_sail_area = 880  # 基準帆面積 [m^2]
+    base_sail_width = 15  # 基準帆幅 [m]
+    assumed_num_sails = 100  # 帆の仮想本数
+
+    # 船体の載貨重量トンを計算
+    hull_dwt = cal_dwt(storage_method, max_storage)
+    # バッテリーの重量トンを計算
+    battery_weight_ton = cal_dwt(1, electric_propulsion_max_storage_wh)
+
+    # 1. 帆の本数を仮定して、重量から船の寸法を計算する
+    # 2. 計算した船の寸法から、甲板面積を算出
+    # 3. 甲板面積と帆の幅から搭載可能な最大帆数を算出
+    # 4. 仮の帆の本数と搭載可能な最大帆数を比較する
+    # 5. 仮の帆の本数を更新し、帆の本数が等しくなるまで繰り返す
+
+    while True:
+
+        # 1. 帆の本数を仮定して、重量から船の寸法を計算する
+        sail_weight = 120 * (sail_area / base_sail_area)  # 帆の重量 [t]
+
+        # 船の総重量(DWT[t])を計算
+        total_ship_weight = (
+            hull_dwt + battery_weight_ton + (assumed_num_sails * sail_weight)
+        )
+        total_ship_weight_per_body = total_ship_weight / hull_num
+
+        # 甲板面積を計算
+        # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
+        if storage_method == 1:  # 電気貯蔵 = バルカー型
+            if total_ship_weight_per_body < 220000:
+                L_oa = 7.9387 * (total_ship_weight_per_body**0.2996)
+                B = 1.4257 * (total_ship_weight_per_body**0.2883)
+
+            elif 220000 <= total_ship_weight_per_body < 330000:
+                L_oa = 139.3148 * (total_ship_weight_per_body**0.069)
+                B = 13.8365 * (total_ship_weight_per_body**0.1127)
+
+            else:
+                L_oa = 361.2
+                B = 65.0
+
+        elif storage_method == 2:  # 水素貯蔵 = タンカー型
+            if total_ship_weight_per_body < 20000:
+                L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
+                B = 1.4070 * (total_ship_weight_per_body**0.2864)
+
+            elif 20000 <= total_ship_weight_per_body < 280000:
+                L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
+                if total_ship_weight_per_body < 40000:
+                    B = 1.4070 * (total_ship_weight_per_body**0.2864)
+                elif 40000 <= total_ship_weight_per_body < 80000:
+                    B = 32.9
+                elif 80000 <= total_ship_weight_per_body < 120000:
+                    B = 43.5
+                elif 120000 <= total_ship_weight_per_body < 200000:
+                    B = 48.9
+                else:
+                    B = 60.2
+
+            else:
+                L_oa = 333.7
+                B = 60.2
+
+        # 2. 計算した船の寸法から、甲板面積を算出
+
+        # L_oa,Bの記録
+        hull_L_oa = L_oa
+        hull_B = B
+
+        # 甲板面積を算出
+        if hull_num == 2:
+            # 船体が2つの場合、Bは3.5倍とする
+            B = B * 3.5
+            hull_B = B
+
+        deck_area = L_oa * B  # 簡易甲板面積 [m^2]
+
+        # 3. 甲板面積と帆の幅から搭載可能な最大帆数を算出
+
+        # 帆の寸法を基準帆から算出
+        scale_factor = (sail_area / base_sail_area) ** 0.5
+        sail_width = base_sail_width * scale_factor
+
+        # 帆の搭載間隔を指定
+        sail_space_per_sail = sail_width * sail_space
+
+        if B < sail_space_per_sail:
+            # 甲板幅が帆幅より狭い場合、船長に合わせて帆の本数を算出
+            max_sails_by_deck_area = L_oa / sail_space_per_sail
+            # 本数を四捨五入
+            max_sails_by_deck_area = round(max_sails_by_deck_area)
+        else:
+            # 甲板面積から搭載できる最大帆数を算出
+            max_sails_by_deck_area_L = L_oa / sail_space_per_sail
+            max_sails_by_deck_area_B = B / sail_space_per_sail
+            max_sails_by_deck_area = round(max_sails_by_deck_area_L) * round(
+                max_sails_by_deck_area_B
+            )
+
+        # 4. 仮の帆の本数と搭載可能な最大帆数を比較する
+        # 5. 仮の帆の本数を更新し、帆の本数が等しくなるまで繰り返す
+
+        if assumed_num_sails == max_sails_by_deck_area:
+            break
+        else:
+            assumed_num_sails = max_sails_by_deck_area
+
+    max_sail_num = max_sails_by_deck_area
+
+    return max_sail_num
+
+
 def run_simulation(cfg):
     typhoon_data_path = cfg.env.typhoon_data_path
     simulation_start_time = cfg.env.simulation_start_time
@@ -50,6 +222,16 @@ def run_simulation(cfg):
     generator_num = cfg.tpg_ship.generator_num
     sail_area = cfg.tpg_ship.sail_area
     sail_space = cfg.tpg_ship.sail_space
+
+    sail_num = calculate_max_sail_num(
+        storage_method,
+        max_storage_wh,
+        electric_propulsion_max_storage_wh,
+        hull_num,
+        sail_area,
+        sail_space,
+    )
+
     sail_steps = cfg.tpg_ship.sail_steps
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
@@ -78,6 +260,7 @@ def run_simulation(cfg):
         generator_num,
         sail_area,
         sail_space,
+        sail_num,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,
@@ -256,7 +439,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 500
+    trial_num = 100
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
