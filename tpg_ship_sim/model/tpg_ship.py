@@ -326,21 +326,197 @@ class TPG_ship:
         self.sails_weight = sail_weight_sum
 
         sum_dwt_t = main_storage_dwt + electric_propulsion_storage_dwt + sail_weight_sum
+        c_f = self.calculate_interference_coefficient(sail_num)
 
         if storage1_method == 1:  # 電気貯蔵
             # バルカー型
             k = 1.7
-            power = k * ((sum_dwt_t / body_num) ** (2 / 3)) * (max_speed**3) * body_num
+            power = (
+                k
+                * ((sum_dwt_t / body_num) ** (2 / 3))
+                * (max_speed**3)
+                * body_num
+                * c_f
+            )
 
         elif storage1_method == 2:  # 水素貯蔵
             # タンカー型
             k = 2.2
-            power = k * ((sum_dwt_t / body_num) ** (2 / 3)) * (max_speed**3) * body_num
+            power = (
+                k
+                * ((sum_dwt_t / body_num) ** (2 / 3))
+                * (max_speed**3)
+                * body_num
+                * c_f
+            )
 
         else:
             print("cannot cal")
 
         return power
+
+    def calculate_interference_coefficient(self, sail_num):
+        """
+        ############################ def calculate_interference_coefficient ############################
+
+        [ 説明 ]
+
+        船体の干渉係数を算出する関数です。self.hull_Bがわかった状態で使うようにしてください。
+
+        具体的には、calculate_max_sail_num関数、
+
+        ##############################################################################
+
+        戻り値 :
+            interference_coefficient (float) : 船体の干渉係数
+
+        #############################################################################
+        """
+
+        # 寸法計算
+        self.calculate_hull_size(sail_num)
+
+        # 船体の干渉係数を算出する。単位はなし。
+        # 船体の干渉係数は船体の形状によって異なるため、ここでは簡易的に算出する。
+
+        # 船体の干渉係数を算出
+
+        if self.hull_num == 1:  # 船体が1つの場合
+
+            interference_coefficient = 1.0
+
+        elif self.hull_num == 2:  # 船体が2つの場合
+
+            # 船体の載貨重量トンを計算
+            hull_dwt = self.cal_dwt(self.storage_method, self.max_storage)
+            # バッテリーの重量トンを計算
+            battery_weight_ton = self.cal_dwt(
+                1, self.electric_propulsion_max_storage_wh
+            )
+            total_ship_weight = (
+                hull_dwt + battery_weight_ton + (sail_num * self.sail_weight)
+            )
+            total_ship_weight_per_body = total_ship_weight / self.hull_num
+
+            # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
+            if self.storage_method == 1:  # 電気貯蔵 = バルカー型
+                if total_ship_weight_per_body < 220000:
+
+                    B = 1.4257 * (total_ship_weight_per_body**0.2883)
+
+                elif 220000 <= total_ship_weight_per_body < 330000:
+
+                    B = 13.8365 * (total_ship_weight_per_body**0.1127)
+
+                else:
+
+                    B = 65.0
+
+            elif self.storage_method == 2:  # 水素貯蔵 = タンカー型
+                if total_ship_weight_per_body < 20000:
+
+                    B = 1.4070 * (total_ship_weight_per_body**0.2864)
+
+                elif 20000 <= total_ship_weight_per_body < 280000:
+
+                    if total_ship_weight_per_body < 40000:
+                        B = 1.4070 * (total_ship_weight_per_body**0.2864)
+                    elif 40000 <= total_ship_weight_per_body < 80000:
+                        B = 32.9
+                    elif 80000 <= total_ship_weight_per_body < 120000:
+                        B = 43.5
+                    elif 120000 <= total_ship_weight_per_body < 200000:
+                        B = 48.9
+                    else:
+                        B = 60.2
+
+                else:
+                    B = 60.2
+
+            # 船側間距離を計算
+            d = self.hull_B - 2 * B
+            # 船体の干渉係数を算出
+            interference_coefficient = 1.0 + 1.0 / (d / B)
+
+        else:
+            print("cannot cal")
+
+        return interference_coefficient
+
+    # 船幅、船長計算
+    def calculate_hull_size(self, sail_num):
+        """
+        ############################ def calculate_hull_size ############################
+
+        [ 説明 ]
+
+        船体の寸法を算出する関数です。
+
+        ##############################################################################
+
+        戻り値 :
+            hull_L_oa (float) : 船体の全長
+            hull_B (float) : 船体の幅
+
+        #############################################################################
+        """
+        # 甲板面積を計算
+        # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
+
+        # 船体の載貨重量トンを計算
+        hull_dwt = self.cal_dwt(self.storage_method, self.max_storage)
+        # バッテリーの重量トンを計算
+        battery_weight_ton = self.cal_dwt(1, self.electric_propulsion_max_storage_wh)
+        total_ship_weight = (
+            hull_dwt + battery_weight_ton + (sail_num * self.sail_weight)
+        )
+        total_ship_weight_per_body = total_ship_weight / self.hull_num
+
+        # 船体の寸法を計算
+        if self.storage_method == 1:  # 電気貯蔵 = バルカー型
+            if total_ship_weight_per_body < 220000:
+                L_oa = 7.9387 * (total_ship_weight_per_body**0.2996)
+                B = 1.4257 * (total_ship_weight_per_body**0.2883)
+
+            elif 220000 <= total_ship_weight_per_body < 330000:
+                L_oa = 139.3148 * (total_ship_weight_per_body**0.069)
+                B = 13.8365 * (total_ship_weight_per_body**0.1127)
+
+            else:
+                L_oa = 361.2
+                B = 65.0
+
+        elif self.storage_method == 2:  # 水素貯蔵 = タンカー型
+            if total_ship_weight_per_body < 20000:
+                L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
+                B = 1.4070 * (total_ship_weight_per_body**0.2864)
+
+            elif 20000 <= total_ship_weight_per_body < 280000:
+                L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
+                if total_ship_weight_per_body < 40000:
+                    B = 1.4070 * (total_ship_weight_per_body**0.2864)
+                elif 40000 <= total_ship_weight_per_body < 80000:
+                    B = 32.9
+                elif 80000 <= total_ship_weight_per_body < 120000:
+                    B = 43.5
+                elif 120000 <= total_ship_weight_per_body < 200000:
+                    B = 48.9
+                else:
+                    B = 60.2
+
+            else:
+                L_oa = 333.7
+                B = 60.2
+
+        # L_oa,Bの記録
+        self.hull_L_oa = L_oa
+        self.hull_B = B
+
+        # 甲板面積を算出
+        if self.hull_num == 2:
+            # 船体が2つの場合、Bは3.5倍とする
+            B = B * 3.5
+            self.hull_B = B
 
     # 搭載性能の計算
     def calculate_max_sail_num(self):
@@ -364,11 +540,6 @@ class TPG_ship:
         base_sail_width = 15  # 基準帆幅 [m]
         assumed_num_sails = 100  # 帆の仮想本数
 
-        # 船体の載貨重量トンを計算
-        hull_dwt = self.cal_dwt(self.storage_method, self.max_storage)
-        # バッテリーの重量トンを計算
-        battery_weight_ton = self.cal_dwt(1, self.electric_propulsion_max_storage_wh)
-
         # 1. 帆の本数を仮定して、重量から船の寸法を計算する
         # 2. 計算した船の寸法から、甲板面積を算出
         # 3. 甲板面積と帆の幅から搭載可能な最大帆数を算出
@@ -378,61 +549,10 @@ class TPG_ship:
         while True:
 
             # 1. 帆の本数を仮定して、重量から船の寸法を計算する
-
-            # 船の総重量(DWT[t])を計算
-            total_ship_weight = (
-                hull_dwt + battery_weight_ton + (assumed_num_sails * self.sail_weight)
-            )
-            total_ship_weight_per_body = total_ship_weight / self.hull_num
-
-            # 甲板面積を計算
-            # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
-            if self.storage_method == 1:  # 電気貯蔵 = バルカー型
-                if total_ship_weight_per_body < 220000:
-                    L_oa = 7.9387 * (total_ship_weight_per_body**0.2996)
-                    B = 1.4257 * (total_ship_weight_per_body**0.2883)
-
-                elif 220000 <= total_ship_weight_per_body < 330000:
-                    L_oa = 139.3148 * (total_ship_weight_per_body**0.069)
-                    B = 13.8365 * (total_ship_weight_per_body**0.1127)
-
-                else:
-                    L_oa = 361.2
-                    B = 65.0
-
-            elif self.storage_method == 2:  # 水素貯蔵 = タンカー型
-                if total_ship_weight_per_body < 20000:
-                    L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
-                    B = 1.4070 * (total_ship_weight_per_body**0.2864)
-
-                elif 20000 <= total_ship_weight_per_body < 280000:
-                    L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
-                    if total_ship_weight_per_body < 40000:
-                        B = 1.4070 * (total_ship_weight_per_body**0.2864)
-                    elif 40000 <= total_ship_weight_per_body < 80000:
-                        B = 32.9
-                    elif 80000 <= total_ship_weight_per_body < 120000:
-                        B = 43.5
-                    elif 120000 <= total_ship_weight_per_body < 200000:
-                        B = 48.9
-                    else:
-                        B = 60.2
-
-                else:
-                    L_oa = 333.7
-                    B = 60.2
-
             # 2. 計算した船の寸法から、甲板面積を算出
-
-            # L_oa,Bの記録
-            self.hull_L_oa = L_oa
-            self.hull_B = B
-
-            # 甲板面積を算出
-            if self.hull_num == 2:
-                # 船体が2つの場合、Bは3.5倍とする
-                B = B * 3.5
-                self.hull_B = B
+            self.calculate_hull_size(assumed_num_sails)
+            L_oa = self.hull_L_oa  # 船体の全長 [m]
+            B = self.hull_B  # 船体の幅 [m]
 
             deck_area = L_oa * B  # 簡易甲板面積 [m^2]
 
@@ -603,19 +723,21 @@ class TPG_ship:
         spacing_penalty (float): 帆の間隔によるペナルティ
         message (str): 完全に等間隔に並べられない場合の理由と改善策（本プログラム内では出力しないデバック用出力）
         """
+        # 船体の寸法を計算
+        self.calculate_hull_size(sail_num)
 
         sail_width = self.sail_width
 
+        max_sail_num = self.calculate_max_sail_num()
+
         B = self.hull_B
         L_oa = self.hull_L_oa
-
-        max_sail_num = self.calculate_max_sail_num()
 
         if self.sail_num == max_sail_num:
             sail_space = self.sail_space
         else:
             # B*L_oaの長方形内に幅sail_widthの帆をsail_num本、等間隔で並べた時の帆の間隔を計算
-            sail_space = sqrt(B * L_oa / sail_num) / sail_width
+            sail_space = np.sqrt(B * L_oa / sail_num) / sail_width
 
         spacing_penalty = 0
         if B > sail_width * sail_space:
@@ -679,6 +801,8 @@ class TPG_ship:
         [ 説明 ]
 
         台風発電船の帆の本数、発電時船速、定格出力を計算して、反映する関数です。
+
+        副次的に、船体の諸元が求められるので、必ず使用する必要があります。
 
         ##############################################################################
 
@@ -764,8 +888,8 @@ class TPG_ship:
         # 発電船発電時の状態量
         self.limit_ship_speed_kt = (
             # 52  # 発電時の船速の上限値(kt) 双胴フェリー船の最高速度を参照
-            # 32  # 発電時の船速の上限値(kt) 一般的なコンテナ船の上限速度を参照
-            22  # 発電時の船速の上限値(kt) 一般的な貨物船の上限速度を参照
+            32  # 発電時の船速の上限値(kt) 一般的なコンテナ船の上限速度を参照
+            # 22  # 発電時の船速の上限値(kt) 一般的な貨物船の上限速度を参照
         )
         self.generationg_wind_speed_mps = 25
         self.generationg_wind_dirrection_deg = 80.0

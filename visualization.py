@@ -19,7 +19,8 @@ def main(cfg: DictConfig) -> None:
     # SQLiteデータベースからStudyを読み込む
     study = optuna.load_study(
         study_name="example-study",
-        storage="sqlite:///experiences/catmaran_journal_first_casestudy.db",
+        storage="sqlite:///experiences/catmaran_journal_discuss_baseposition.db",
+        # storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
     )
 
     output_folder_path = HydraConfig.get().run.dir
@@ -31,10 +32,10 @@ def main(cfg: DictConfig) -> None:
     os.makedirs(output_png_folder_path, exist_ok=True)
 
     # パラレルコーディネートプロットの生成と保存
-    fig_parallel = vis.plot_parallel_coordinate(study)
-    pio.write_image(
-        fig_parallel, os.path.join(output_png_folder_path, "parallel_coordinate.png")
-    )
+    # fig_parallel = vis.plot_parallel_coordinate(study)
+    # pio.write_image(
+    #     fig_parallel, os.path.join(output_png_folder_path, "parallel_coordinate.png")
+    # )
 
     # 重要度プロットの生成と保存
     fig_importance = vis.plot_param_importances(study)
@@ -43,21 +44,21 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Contourプロットの生成と保存
-    fig_contour = vis.plot_contour(study)
-    fig_contour.update_layout(
-        autosize=False, width=3000, height=2400, font=dict(size=10)
-    )
-    pio.write_image(fig_contour, os.path.join(output_png_folder_path, "contour.png"))
+    # fig_contour = vis.plot_contour(study)
+    # fig_contour.update_layout(
+    #     autosize=False, width=3000, height=2400, font=dict(size=10)
+    # )
+    # pio.write_image(fig_contour, os.path.join(output_png_folder_path, "contour.png"))
 
     # Sliceプロットの生成と保存
-    fig_slice = vis.plot_slice(study)
-    pio.write_image(fig_slice, os.path.join(output_png_folder_path, "slice.png"))
+    # fig_slice = vis.plot_slice(study)
+    # pio.write_image(fig_slice, os.path.join(output_png_folder_path, "slice.png"))
 
     # パラメータ履歴プロットの生成と保存
-    fig_history = vis.plot_optimization_history(study)
-    pio.write_image(
-        fig_history, os.path.join(output_png_folder_path, "optimization_history.png")
-    )
+    # fig_history = vis.plot_optimization_history(study)
+    # pio.write_image(
+    #     fig_history, os.path.join(output_png_folder_path, "optimization_history.png")
+    # )
 
     print(f"プロットが{output_png_folder_path}にPNGファイルとして保存されました。")
 

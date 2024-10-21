@@ -23,7 +23,7 @@ tpg_ship:
   generator_num: 2 # 発電機の数
   sail_area: 2334 # 帆の面積[m^2]
   sail_space: 2
-  sail_num: 9999 # 帆の数
+  sail_num: 5 # 帆の数
   sail_steps: 6 # 帆の段数
   ship_return_speed_kt: 8 # 拠点帰港時の船速[kt]
   ship_max_speed_kt: 20 # 台風発電船の最大船速[kt]

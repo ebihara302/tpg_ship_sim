@@ -347,7 +347,7 @@ def objective(trial):
     # config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
     sail_area_100m2 = trial.suggest_int("sail_area_every_100m2", 1, 100)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
-    config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
+    # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "ship_return_speed_kt", 4, 20
@@ -439,7 +439,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 100
+    trial_num = 500
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
