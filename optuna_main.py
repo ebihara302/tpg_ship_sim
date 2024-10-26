@@ -335,7 +335,7 @@ def objective(trial):
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
     EP_max_storage_GWh_10 = trial.suggest_int(
-        "EP_max_storage_GWh_10", 10, 200
+        "EP_max_storage_GWh_10", 5, 200
     )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
     config.tpg_ship.electric_propulsion_max_storage_wh = (
         EP_max_storage_GWh_10 * 100000000

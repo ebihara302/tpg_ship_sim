@@ -20,8 +20,8 @@ def main(cfg: DictConfig) -> None:
     study = optuna.load_study(
         study_name="example-study",
         # storage="sqlite:///experiences/catmaran_journal_discuss_baseposition.db",
-        # storage="sqlite:///experiences/catmaran_journal_discuss_monohull.db",
-        storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
+        storage="sqlite:///experiences/catmaran_journal_discuss_monohull.db",
+        # storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
     )
 
     output_folder_path = HydraConfig.get().run.dir
