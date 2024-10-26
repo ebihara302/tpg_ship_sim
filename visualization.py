@@ -19,8 +19,9 @@ def main(cfg: DictConfig) -> None:
     # SQLiteデータベースからStudyを読み込む
     study = optuna.load_study(
         study_name="example-study",
-        storage="sqlite:///experiences/catmaran_journal_discuss_baseposition.db",
-        # storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
+        # storage="sqlite:///experiences/catmaran_journal_discuss_baseposition.db",
+        # storage="sqlite:///experiences/catmaran_journal_discuss_monohull.db",
+        storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
     )
 
     output_folder_path = HydraConfig.get().run.dir
@@ -41,6 +42,56 @@ def main(cfg: DictConfig) -> None:
     fig_importance = vis.plot_param_importances(study)
     pio.write_image(
         fig_importance, os.path.join(output_png_folder_path, "param_importances.png")
+    )
+    # パラメータ名の変更と絞り込み
+    param_list = [
+        "max_storage_GWh",
+        "sail_area_every_100m2",
+        "generator_turbine_radius",
+        "EP_max_storage_GWh_10",
+        "govia_base_judge_energy_storage_per",
+        "ship_return_speed_kt",
+    ]
+    fig_importance = vis.plot_param_importances(study, params=param_list)
+    # プロットで使用するラベルのマッピングを設定
+    label_mapping = {
+        "max_storage_GWh": "Ship Capacity",
+        "sail_area_every_100m2": "Sail Area of Rigid Wing Sail",
+        "generator_turbine_radius": "Underwater Turbine Radius",
+        "EP_max_storage_GWh_10": "Electric Motor Battery Capacity",
+        "govia_base_judge_energy_storage_per": "Percentage of Capacity of port call trigger",
+        "ship_return_speed_kt": "Minimum Ship Speed at port of call",
+    }
+    # 縦軸のパラメータ名を更新して、重要な4つのパラメータに絞り込む
+    fig_importance.update_layout(
+        yaxis=dict(
+            tickmode="array",
+            tickvals=list(label_mapping.keys()),
+            ticktext=list(label_mapping.values()),
+        )
+    )
+    pio.write_image(
+        fig_importance, os.path.join(output_png_folder_path, "param_importances2.png")
+    )
+
+    label_mapping = {
+        "max_storage_GWh": "C_ship",
+        "sail_area_every_100m2": "S_sail",
+        "generator_turbine_radius": "r_PG",
+        "EP_max_storage_GWh_10": "C_battery",
+        "govia_base_judge_energy_storage_per": "C_trigger",
+        "ship_return_speed_kt": "U_return(min)",
+    }
+    # 縦軸のパラメータ名を更新して、重要な4つのパラメータに絞り込む
+    fig_importance.update_layout(
+        yaxis=dict(
+            tickmode="array",
+            tickvals=list(label_mapping.keys()),
+            ticktext=list(label_mapping.values()),
+        )
+    )
+    pio.write_image(
+        fig_importance, os.path.join(output_png_folder_path, "param_importances3.png")
     )
 
     # Contourプロットの生成と保存

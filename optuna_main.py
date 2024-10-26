@@ -335,7 +335,7 @@ def objective(trial):
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
     EP_max_storage_GWh_10 = trial.suggest_int(
-        "EP_max_storage_GWh_10", 50, 800
+        "EP_max_storage_GWh_10", 10, 200
     )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
     config.tpg_ship.electric_propulsion_max_storage_wh = (
         EP_max_storage_GWh_10 * 100000000
@@ -345,7 +345,7 @@ def objective(trial):
     # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("MCH_to_elect_efficiency", 0.4, 0.6)
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("elect_to_MCH_efficiency", 0.7, 0.9)
     # config.tpg_ship.sail_num = trial.suggest_int("sail_num", 10, 60)
-    sail_area_100m2 = trial.suggest_int("sail_area_every_100m2", 1, 100)
+    sail_area_100m2 = trial.suggest_int("sail_area_every_100m2", 50, 200)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
     # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
     config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)

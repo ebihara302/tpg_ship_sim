@@ -702,6 +702,10 @@ class TPG_ship:
         self.tpgship_generating_drag = (
             turbine_drag_coefficient + hull_drag_coefficient
         ) * generating_ship_speed_mps**2
+        self.tpgship_turbine_drag = (
+            turbine_drag_coefficient * generating_ship_speed_mps**2
+        )
+        self.tpgship_hull_drag = hull_drag_coefficient * generating_ship_speed_mps**2
 
         # 最終結果の反映
         return generating_ship_speed_kt

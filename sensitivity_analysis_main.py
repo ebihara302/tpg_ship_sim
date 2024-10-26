@@ -168,7 +168,7 @@ def main(cfg: DictConfig) -> None:
     x = 10  # stepが整数のときは1、0.1にするときは10、0.01にするときは100にする
     param_min = 14  # 720 * 10**9
     param_max = 18  # 740 * 10**9
-    step = 2  # 10**9  # 小数点の刻み幅にしたいときはxを調整する
+    step = 4  # 10**9  # 小数点の刻み幅にしたいときはxを調整する
 
     # 結果保存用のCSVファイルを初期化
     output_folder_path = HydraConfig.get().run.dir
@@ -231,8 +231,9 @@ def main(cfg: DictConfig) -> None:
     # dfのグラフ化
     plt.style.use(["science", "no-latex", "high-vis", "grid"])
     Title_name = "Sensitivity Analysis"
-    x_label = analysis_param_name + unit_name
-    y_label = "Total MCH acquired in operations[GWh]"
+    # x_label = analysis_param_name + unit_name
+    x_label = "r_PG[m]"
+    y_label = "Total MCH_operation[GWh]"
     df1 = pl.read_csv(final_csv)
     # polarsで指定列要素の取得
     x = df1[analysis_param_name].to_numpy()
@@ -245,8 +246,10 @@ def main(cfg: DictConfig) -> None:
     y = y / 10**9
     # グラフ化 点ありの折れ線グラフ
     plt.plot(x, y, marker="o", markersize=3)
-    plt.ylim(0, None)
-    plt.title(Title_name)
+    # y軸の最大値はyの最大値を1.1倍に設定
+    y_max = 2000  # max(y) * 1.1
+    plt.ylim(0, y_max)
+    # plt.title(Title_name)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
 
