@@ -166,8 +166,8 @@ def run_simulations_for_sensitivity_analysis(cfg, param_min, param_max, step, x)
 def main(cfg: DictConfig) -> None:
 
     x = 10  # stepが整数のときは1、0.1にするときは10、0.01にするときは100にする
-    param_min = 14  # 720 * 10**9
-    param_max = 18  # 740 * 10**9
+    param_min = 16  # 720 * 10**9
+    param_max = 20  # 740 * 10**9
     step = 4  # 10**9  # 小数点の刻み幅にしたいときはxを調整する
 
     # 結果保存用のCSVファイルを初期化
@@ -247,7 +247,7 @@ def main(cfg: DictConfig) -> None:
     # グラフ化 点ありの折れ線グラフ
     plt.plot(x, y, marker="o", markersize=3)
     # y軸の最大値はyの最大値を1.1倍に設定
-    y_max = 2000  # max(y) * 1.1
+    y_max = 2500  # max(y) * 1.1
     plt.ylim(0, y_max)
     # plt.title(Title_name)
     plt.xlabel(x_label)

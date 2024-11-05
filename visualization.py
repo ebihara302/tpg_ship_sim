@@ -20,8 +20,8 @@ def main(cfg: DictConfig) -> None:
     study = optuna.load_study(
         study_name="example-study",
         # storage="sqlite:///experiences/catmaran_journal_discuss_baseposition.db",
-        storage="sqlite:///experiences/catmaran_journal_discuss_monohull.db",
-        # storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
+        # storage="sqlite:///experiences/catmaran_journal_discuss_monohull.db",
+        storage="sqlite:///experiences/catmaran_journal_first_casestudy_neo.db",
     )
 
     output_folder_path = HydraConfig.get().run.dir
@@ -53,6 +53,9 @@ def main(cfg: DictConfig) -> None:
         "ship_return_speed_kt",
     ]
     fig_importance = vis.plot_param_importances(study, params=param_list)
+    pio.write_image(
+        fig_importance, os.path.join(output_png_folder_path, "param_importances1.png")
+    )
     # プロットで使用するラベルのマッピングを設定
     label_mapping = {
         "max_storage_GWh": "Ship Capacity",

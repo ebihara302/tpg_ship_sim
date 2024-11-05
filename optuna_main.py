@@ -326,11 +326,13 @@ def run_simulation(cfg):
 def objective(trial):
     config = hydra.compose(config_name="config")
 
+    config.tpg_ship.hull_num = 1
+
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
 
     max_storage_GWh = trial.suggest_int(
-        "max_storage_GWh", 50, 800
+        "max_storage_GWh", 50, 1000
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
@@ -348,12 +350,12 @@ def objective(trial):
     sail_area_100m2 = trial.suggest_int("sail_area_every_100m2", 50, 200)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
     # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
-    config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 3, 7)
+    config.tpg_ship.sail_steps = trial.suggest_int("sail_steps", 1, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "ship_return_speed_kt", 4, 20
     )
     config.tpg_ship.generator_turbine_radius = trial.suggest_int(
-        "generator_turbine_radius", 5, 20
+        "generator_turbine_radius", 5, 25
     )
     config.tpg_ship.forecast_weight = trial.suggest_int("forecast_weight", 10, 90)
     # config.tpg_ship.typhoon_effective_range = trial.suggest_int("typhoon_effective_range", 50, 150)
@@ -381,8 +383,8 @@ def main(cfg: DictConfig) -> None:
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-
+    # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
+    storage = "sqlite:///experiences/catmaran_journal_discuss_monohull.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
@@ -439,7 +441,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 500
+    trial_num = 900
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
