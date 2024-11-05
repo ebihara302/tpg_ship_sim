@@ -190,8 +190,8 @@ def draw_map(
             )
 
         # 中継貯蔵拠点&待機位置
-        base_lat = 24
-        base_lon = 153
+        base_lat = 24.3
+        base_lon = 154.0
         ax.plot(base_lon, base_lat, "crimson", markersize=15, marker="d")
 
         # 供給拠点
