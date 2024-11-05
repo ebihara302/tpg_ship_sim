@@ -241,6 +241,7 @@ def run_simulation(cfg):
         cfg.tpg_ship.govia_base_judge_energy_storage_per
     )
     judge_time_times = cfg.tpg_ship.judge_time_times
+    operational_reserve_percentage = cfg.tpg_ship.operational_reserve_percentage
 
     tpg_ship_1 = tpg_ship.TPG_ship(
         initial_position,
@@ -268,6 +269,7 @@ def run_simulation(cfg):
         typhoon_effective_range,
         govia_base_judge_energy_storage_per,
         judge_time_times,
+        operational_reserve_percentage,
     )
 
     # Forecaster
@@ -441,7 +443,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 900
+    trial_num = 70
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
