@@ -133,8 +133,8 @@ def simulate(
 
     tpg_ship_1.TY_start_time_list = get_TY_start_time(typhoon_data_path)
     # 待機位置に関する設定
-    tpg_ship_1.standby_lat = st_base.locate[0]
-    tpg_ship_1.standby_lon = st_base.locate[1]
+    # tpg_ship_1.standby_lat = st_base.locate[0]
+    # tpg_ship_1.standby_lon = st_base.locate[1]
 
     # tpg_ship_1.govia_base_judge_energy_storage_per = 20
 

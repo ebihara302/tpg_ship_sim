@@ -110,6 +110,7 @@ class TPG_ship:
         govia_base_judge_energy_storage_per,
         judge_time_times,
         operational_reserve_percentage,
+        standby_position,
     ) -> None:
         self.ship_lat = initial_position[0]
         self.ship_lon = initial_position[1]
@@ -140,7 +141,12 @@ class TPG_ship:
         self.typhoon_effective_range = typhoon_effective_range
         self.govia_base_judge_energy_storage_per = govia_base_judge_energy_storage_per
         self.judge_time_times = judge_time_times
-        self.operational_reserve = self.max_storage * operational_reserve_percentage
+        self.operational_reserve = self.max_storage * (
+            operational_reserve_percentage / 100
+        )
+        self.operational_reserve_percentage = operational_reserve_percentage
+        self.standby_lat = standby_position[0]
+        self.standby_lon = standby_position[1]
 
     # __init__で定義されたパラメータをデータフレームとして記録する関数
     def get_outputs_for_evaluation(self):
@@ -161,6 +167,8 @@ class TPG_ship:
             {
                 "Base_lat": [self.base_lat],
                 "Base_lon": [self.base_lon],
+                "Standby_lat": [self.standby_lat],
+                "Standby_lon": [self.standby_lon],
                 "hull_num": [self.hull_num],
                 "hull_L_oa": [self.hull_L_oa],
                 "hull_B": [self.hull_B],
@@ -198,7 +206,10 @@ class TPG_ship:
                 ],
                 "judge_time_times": [self.judge_time_times],
                 "sail_penalty": [self.sail_penalty],
+                "operational_reserve_percentage": self.operational_reserve_percentage,
                 "total_gene_elect": self.total_gene_elect_list[-1],
+                "total_loss_elect": self.total_loss_elect_list[-1],
+                "sum_supply_elect": self.sum_supply_elect_list[-1],
             }
         )
 
@@ -206,6 +217,8 @@ class TPG_ship:
             [
                 pl.col("Base_lat").cast(pl.Float64),
                 pl.col("Base_lon").cast(pl.Float64),
+                pl.col("Standby_lat").cast(pl.Float64),
+                pl.col("Standby_lon").cast(pl.Float64),
                 pl.col("hull_num").cast(pl.Int64),
                 pl.col("hull_L_oa").cast(pl.Float64),
                 pl.col("hull_B").cast(pl.Float64),
@@ -239,7 +252,10 @@ class TPG_ship:
                 pl.col("govia_base_judge_energy_storage_per").cast(pl.Float64),
                 pl.col("judge_time_times").cast(pl.Float64),
                 pl.col("sail_penalty").cast(pl.Float64),
+                pl.col("operational_reserve_percentage").cast(pl.Float64),
                 pl.col("total_gene_elect").cast(pl.Float64),
+                pl.col("total_loss_elect").cast(pl.Float64),
+                pl.col("sum_supply_elect").cast(pl.Float64),
             ]
         )
 
