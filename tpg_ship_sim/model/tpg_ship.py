@@ -109,6 +109,7 @@ class TPG_ship:
         typhoon_effective_range,
         govia_base_judge_energy_storage_per,
         judge_time_times,
+        operational_reserve_percentage,
     ) -> None:
         self.ship_lat = initial_position[0]
         self.ship_lon = initial_position[1]
@@ -139,6 +140,7 @@ class TPG_ship:
         self.typhoon_effective_range = typhoon_effective_range
         self.govia_base_judge_energy_storage_per = govia_base_judge_energy_storage_per
         self.judge_time_times = judge_time_times
+        self.operational_reserve = self.max_storage * operational_reserve_percentage
 
     # __init__で定義されたパラメータをデータフレームとして記録する関数
     def get_outputs_for_evaluation(self):
@@ -852,6 +854,7 @@ class TPG_ship:
         self.storage = 0
         self.storage_percentage = (self.storage / self.max_storage) * 100
         self.supply_elect = 0
+        self.sum_supply_elect = 0
         self.gene_elect = 0
         self.loss_elect = 0
         self.ship_state = 0
@@ -883,6 +886,7 @@ class TPG_ship:
         self.electric_propulsion_storage_state = str("no action")  # 電気推進機の状態
         self.wind_speed = 0
         self.wind_direction = 0
+        self.minus_storage_penalty = 0
 
         # 発電船自律判断システム設定
         self.judge_energy_storage_per = 100
@@ -951,6 +955,7 @@ class TPG_ship:
         self.per_timestep_gene_elect_list = []  # 時間幅あたりの発電量
         self.per_timestep_loss_elect_list = []  # 時間幅あたりの消費電力
         # self.year_round_balance_gene_elect_list = []  # 通年発電収支
+        self.sum_supply_elect_list = []  # 総供給電力量
 
         # 発電状態チェック用
         self.GS_gene_judge_list = []
@@ -1019,7 +1024,11 @@ class TPG_ship:
 
         storage_percentage = (self.storage / self.max_storage) * 100
         # 蓄電量が20％以下
-        if storage_percentage <= 20:
+        if storage_percentage < 0:
+            self.minus_storage_penalty = self.minus_storage_penalty + 1
+            storage_state = 0
+
+        elif storage_percentage <= 20:
 
             storage_state = 1
         # 蓄電量が100％以上
@@ -1047,6 +1056,10 @@ class TPG_ship:
         # self.year_round_balance_gene_elect_list.append(
         #    float(self.total_gene_elect - self.total_loss_elect)
         # )  # 通年発電収支
+
+        self.sum_supply_elect_list.append(
+            float(self.sum_supply_elect)
+        )  # 総供給電力量[Wh]
 
         # 発電状態チェック用
         self.GS_gene_judge_list.append(self.GS_gene_judge)
@@ -1121,6 +1134,7 @@ class TPG_ship:
                 "ONBOARD ENERGY STORAGE[Wh]": self.balance_gene_elect_list,
                 "ONBOARD ELECTRIC PROPULSION STORAGE[Wh] ": self.trust_power_storage_list,
                 "ONBOARD ELECTRIC PROPULSION STORAGE STATUS": self.electric_propulsion_storage_state_list,
+                "TOTAL SUPPLY ELECTRICITY[Wh]": self.sum_supply_elect_list,
             }
         )
 
@@ -2276,9 +2290,15 @@ class TPG_ship:
 
             self.speed_kt = 0
 
-            # 電気の積み下ろし
-            self.supply_elect = self.storage
-            self.storage = 0
+            # 電気/MCHの積み下ろし
+            if self.storage >= self.operational_reserve:
+                self.supply_elect = self.storage - self.operational_reserve
+                self.storage = self.operational_reserve
+            else:
+                self.supply_elect = 0
+                # self.storageはそのまま
+
+            self.sum_supply_elect = self.sum_supply_elect + self.supply_elect
 
             # 発電の有無の判断
             self.GS_gene_judge = 0  # 0なら発電していない、1なら発電
@@ -2341,8 +2361,15 @@ class TPG_ship:
 
             if self.standby_lat == self.base_lat and self.standby_lon == self.base_lon:
 
-                self.supply_elect = self.storage
-                self.storage = 0
+                # 電気/MCHの積み下ろし
+                if self.storage >= self.operational_reserve:
+                    self.supply_elect = self.storage - self.operational_reserve
+                    self.storage = self.operational_reserve
+                else:
+                    self.supply_elect = 0
+                    # self.storageはそのまま
+
+                self.sum_supply_elect = self.sum_supply_elect + self.supply_elect
 
                 # 電気推進機用電力の供給
                 self.electric_propulsion_storage_wh = (
