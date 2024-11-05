@@ -47,6 +47,7 @@ def main(cfg: DictConfig) -> None:
     generator_num = cfg.tpg_ship.generator_num
     sail_area = cfg.tpg_ship.sail_area
     sail_space = cfg.tpg_ship.sail_space
+    sail_num = cfg.tpg_ship.sail_num
     sail_steps = cfg.tpg_ship.sail_steps
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
     ship_max_speed_kt = cfg.tpg_ship.ship_max_speed_kt
@@ -56,6 +57,7 @@ def main(cfg: DictConfig) -> None:
         cfg.tpg_ship.govia_base_judge_energy_storage_per
     )
     judge_time_times = cfg.tpg_ship.judge_time_times
+    operational_reserve_percentage = cfg.tpg_ship.operational_reserve_percentage
 
     tpg_ship_1 = tpg_ship.TPG_ship(
         initial_position,
@@ -75,6 +77,7 @@ def main(cfg: DictConfig) -> None:
         generator_num,
         sail_area,
         sail_space,
+        sail_num,
         sail_steps,
         ship_return_speed_kt,
         ship_max_speed_kt,
@@ -82,6 +85,7 @@ def main(cfg: DictConfig) -> None:
         typhoon_effective_range,
         govia_base_judge_energy_storage_per,
         judge_time_times,
+        operational_reserve_percentage,
     )
 
     # Forecaster

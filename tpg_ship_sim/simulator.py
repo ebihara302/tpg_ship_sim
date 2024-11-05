@@ -95,7 +95,7 @@ def simulate(
     time_step_unix = 3600 * time_step
 
     # 繰り返しの回数
-    record_count = int((unixtime_12_31 - current_time) / (time_step_unix) + 1)
+    record_count = int((unixtime_12_31 - current_time) / (time_step_unix))
 
     # 台風データ設定
     typhoon_path_forecaster.year = year
