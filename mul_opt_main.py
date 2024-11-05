@@ -242,6 +242,7 @@ def run_simulation(cfg):
     )
     judge_time_times = cfg.tpg_ship.judge_time_times
     operational_reserve_percentage = cfg.tpg_ship.operational_reserve_percentage
+    standby_position = cfg.tpg_ship.standby_position
 
     tpg_ship_1 = tpg_ship.TPG_ship(
         initial_position,
@@ -270,6 +271,7 @@ def run_simulation(cfg):
         govia_base_judge_energy_storage_per,
         judge_time_times,
         operational_reserve_percentage,
+        standby_position,
     )
 
     # Forecaster
