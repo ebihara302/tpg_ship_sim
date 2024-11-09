@@ -207,7 +207,7 @@ class TPG_ship:
                 "judge_time_times": [self.judge_time_times],
                 "sail_penalty": [self.sail_penalty],
                 "operational_reserve_percentage": self.operational_reserve_percentage,
-                "total_gene_elect": self.total_gene_elect_list[-1],
+                "total_gene_elect(mch)": self.total_gene_elect_list[-1],
                 "total_loss_elect": self.total_loss_elect_list[-1],
                 "sum_supply_elect": self.sum_supply_elect_list[-1],
                 "minus_storage_penalty": self.minus_storage_penalty_list[-1],
@@ -254,10 +254,10 @@ class TPG_ship:
                 pl.col("judge_time_times").cast(pl.Float64),
                 pl.col("sail_penalty").cast(pl.Float64),
                 pl.col("operational_reserve_percentage").cast(pl.Float64),
-                pl.col("total_gene_mch").cast(pl.Float64),
+                pl.col("total_gene_elect(mch)").cast(pl.Float64),
                 pl.col("total_loss_elect").cast(pl.Float64),
                 pl.col("sum_supply_elect").cast(pl.Float64),
-                pl.col("minus_storage_penalty").cast(pl.Float64),
+                pl.col("minus_storage_penalty").cast(pl.Int64),
             ]
         )
 

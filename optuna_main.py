@@ -369,7 +369,7 @@ def objective(trial):
     config.tpg_ship.judge_time_times = trial.suggest_float("judge_time_times", 1.0, 2.0)
 
     config.tpg_ship.operational_reserve_percentage = trial.suggest_int(
-        "operational_reserve_percentage", 0, 30
+        "operational_reserve_percentage", 0, 50
     )
 
     tpgship_standby_lat = trial.suggest_int("tpgship_standby_lat", 0, 30)

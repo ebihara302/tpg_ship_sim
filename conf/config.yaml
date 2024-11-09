@@ -1,7 +1,7 @@
 env:
   #typhoon_data_path: "data/typhoon_path/typhoon_data_2019_6_interval.csv"
   typhoon_data_path: "data/typhoon_path/combined_typhoon_data_2019-2023.csv"
-  simulation_start_time: "2019-01-01 00:00:00"
+  simulation_start_time: "2021-01-01 00:00:00"
   simulation_end_time: "2023-12-31 18:00:00"
   
 tpg_ship:
