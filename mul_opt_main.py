@@ -325,6 +325,7 @@ def run_simulation(cfg):
         tpg_ship_1.total_gene_elect,
         tpg_ship_1.total_loss_elect,
         tpg_ship_1.sum_supply_elect,
+        tpg_ship_1.minus_storage_penalty,
     ]
     print(results)
 
@@ -392,8 +393,9 @@ def objective(trial):
     total_generation = results[0]
     total_loss = results[1]
     total_supply = results[2]
+    minus_storage_penalty = results[3]
 
-    return total_generation, total_loss, total_supply
+    return total_generation, total_loss, total_supply, minus_storage_penalty
 
 
 @hydra.main(config_name="config", version_base=None, config_path="conf")
@@ -409,7 +411,7 @@ def main(cfg: DictConfig) -> None:
     study = optuna.create_study(
         study_name="example-study",
         storage=storage,
-        directions=["maximize", "minimize", "maximize"],
+        directions=["maximize", "minimize", "maximize", "minimize"],
         load_if_exists=True,
     )
 
@@ -455,9 +457,10 @@ def main(cfg: DictConfig) -> None:
         ("judge_time_times", pl.Float64),
         ("sail_penalty", pl.Float64),
         ("operational_reserve_percentage", pl.Float64),
-        ("total_gene_elect", pl.Float64),
+        ("total_gene_elect(mch)", pl.Float64),
         ("total_loss_elect", pl.Float64),
         ("sum_supply_elect", pl.Float64),
+        ("minus_storage_penalty", pl.Float64),
     ]
 
     # Create an empty DataFrame with the specified schema
