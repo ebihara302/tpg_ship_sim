@@ -321,16 +321,20 @@ def run_simulation(cfg):
         temp_tpg_ship_param_log_file_name,
     )
 
-    print(tpg_ship_1.total_gene_elect)
+    results = [
+        tpg_ship_1.total_gene_elect,
+        tpg_ship_1.total_loss_elect,
+        tpg_ship_1.sum_supply_elect,
+        tpg_ship_1.minus_storage_penalty,
+    ]
+    print(results)
 
-    return tpg_ship_1.total_gene_elect
+    return results
 
 
 # 探索範囲の指定用関数
 def objective(trial):
     config = hydra.compose(config_name="config")
-
-    config.tpg_ship.hull_num = 1
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
@@ -372,6 +376,7 @@ def objective(trial):
         "operational_reserve_percentage", 0, 30
     )
 
+    # 待機位置の変更
     tpgship_standby_lat = trial.suggest_int("tpgship_standby_lat", 0, 30)
     tpgship_standby_lon = trial.suggest_int("tpgship_standby_lon", 134, 180)
     config.tpg_ship.standby_position = [tpgship_standby_lat, tpgship_standby_lon]
@@ -383,9 +388,14 @@ def objective(trial):
     # config.tpg_ship.initial_position = config.storage_base.locate
 
     # シミュレーションを実行
-    total_generation = run_simulation(config)
+    results = run_simulation(config)
 
-    return total_generation
+    total_generation = results[0]
+    total_loss = results[1]
+    total_supply = results[2]
+    minus_storage_penalty = results[3]
+
+    return total_generation, total_loss, total_supply, minus_storage_penalty
 
 
 @hydra.main(config_name="config", version_base=None, config_path="conf")
@@ -396,12 +406,12 @@ def main(cfg: DictConfig) -> None:
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-    storage = "sqlite:///experiences/catmaran_journal_discuss_monohull.db"
+    storage = "sqlite:///experiences/catmaran_discuss_mul_opt_first.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
         storage=storage,
-        direction="maximize",
+        directions=["maximize", "minimize", "maximize", "minimize"],
         load_if_exists=True,
     )
 
@@ -411,6 +421,8 @@ def main(cfg: DictConfig) -> None:
     columns = [
         ("Base_lat", pl.Float64),
         ("Base_lon", pl.Float64),
+        ("Standby_lat", pl.Float64),
+        ("Standby_lon", pl.Float64),
         ("hull_num", pl.Int64),
         ("hull_L_oa", pl.Float64),
         ("hull_B", pl.Float64),
@@ -444,7 +456,11 @@ def main(cfg: DictConfig) -> None:
         ("govia_base_judge_energy_storage_per", pl.Float64),
         ("judge_time_times", pl.Float64),
         ("sail_penalty", pl.Float64),
-        ("total_gene_elect", pl.Float64),
+        ("operational_reserve_percentage", pl.Float64),
+        ("total_gene_elect(mch)", pl.Float64),
+        ("total_loss_elect", pl.Float64),
+        ("sum_supply_elect", pl.Float64),
+        ("minus_storage_penalty", pl.Float64),
     ]
 
     # Create an empty DataFrame with the specified schema
@@ -453,7 +469,7 @@ def main(cfg: DictConfig) -> None:
     df.write_csv(final_csv)
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 70
+    trial_num = 1000
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
