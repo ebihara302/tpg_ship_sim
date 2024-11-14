@@ -488,6 +488,37 @@ def main(cfg: DictConfig) -> None:
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
 
+    # final_csvに目的関数の値のデータを追加
+    # ファイルの読み込み
+    df = pl.read_csv(final_csv)
+
+    # ファイルの行数を取得
+    row_num = len(df)
+
+    # 行数分の目的関数の値を"total_gene_elect(mch)","total_loss_elect", "sum_supply_elect","minus_storage_penalty"から計算
+    objective_values = []
+
+    for i in range(row_num):
+        total_gene_elect = df["total_gene_elect(mch)"][i]
+        total_loss_elect = df["total_loss_elect"][i]
+        sum_supply_elect = df["sum_supply_elect"][i]
+        minus_storage_penalty = df["minus_storage_penalty"][i]
+
+        Ge = scale_value(total_gene_elect)
+        Le = scale_value(total_loss_elect)
+        Se = scale_value(sum_supply_elect)
+        Ms = scale_value(minus_storage_penalty)
+
+        objective_value = Ge - Le + Se - Ms
+
+        objective_values.append(objective_value)
+
+    # 目的関数の値をデータフレームに追加
+    df = df.with_columns(pl.Series("objective_value", objective_values))
+
+    # ファイルの保存
+    df.write_csv(final_csv)
+
     # 最良の試行を出力
     print("Best trial:")
     trial = study.best_trial
