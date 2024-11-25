@@ -629,7 +629,7 @@ def draw_graph(
     UTC = timezone(timedelta(hours=+0), "UTC")
 
     # データの整理
-    totalgene = TPGship_data["TOTAL POWER GENERATION[Wh]"]
+    totalgene = TPGship_data["TOTAL POWER(MCH) GENERATION[Wh]"]
     tg = []
     for i in range(len(totalgene)):
         tg.append(totalgene[i] / 10**9)
