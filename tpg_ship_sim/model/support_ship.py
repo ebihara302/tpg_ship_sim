@@ -22,6 +22,7 @@ class Support_ship:
         time_step (int) : シミュレーションにおける時間の進み幅[hours]
         current_time (int) : シミュレーション上の現在時刻(unixtime)
         storage_base_position (taple) : 中継貯蔵拠点の座標(緯度,経度)
+        supply_base_locate (taple) : 供給拠点の座標(緯度,経度)
 
     属性 :
         supplybase_lat (float) : 供給拠点の緯度
@@ -42,6 +43,7 @@ class Support_ship:
 
     ship_gene = 0
     storage = 0
+    supply_elect = 0
     arrived_supplybase = 1
     arrived_storagebase = 0
 
@@ -92,7 +94,10 @@ class Support_ship:
         self.sp_target_lat_list.append(float(self.target_lat))
         self.sp_target_lon_list.append(float(self.target_lon))
         self.sp_storage_list.append(float(self.storage))
-        self.sp_st_per_list.append(float(self.storage / self.max_storage * 100))
+        if self.max_storage == 0:
+            self.sp_st_per_list.append(0)
+        else:
+            self.sp_st_per_list.append(float(self.storage / self.max_storage * 100))
         self.sp_ship_lat_list.append(float(self.ship_lat))
         self.sp_ship_lon_list.append(float(self.ship_lon))
         self.sp_brance_condition_list.append(self.brance_condition)
@@ -408,6 +413,7 @@ class Support_ship:
             self.target_lat = np.nan
             self.target_lon = np.nan
             self.target_distance = np.nan
+            self.supply_elect = self.storage
             self.storage = 0
 
             self.speed_kt = 0
@@ -415,6 +421,7 @@ class Support_ship:
         else:
             self.brance_condition = "go to supply Base"
             self.arrived_supplybase = 0
+            self.supply_elect = 0
 
     def get_next_ship_state(self, storage_base_position, year, current_time, time_step):
 

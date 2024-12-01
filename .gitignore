@@ -169,15 +169,6 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
-dev_program.ipynb
-visualization2.py
-rewrite_graph.py
-experiences/catmaran_journal_first_casestudy_neo_500times_backup.db
-sensitivity_analysis_main_1.py
-sensitivity_analysis_main_2.py
-optuna_main_monohull.py
-optuna_main_baseposition.py
-visualization_repair.py
-optuna_main_2019.py
-optuna_main_2019.py
-optuna_main_2023.py
+# User-specific files
+research_programs/
+data/typhoon_path/cluster_center_trajectories/

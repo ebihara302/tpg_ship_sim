@@ -2271,9 +2271,9 @@ class TPG_ship:
         self.ship_lat = next_lat
         self.ship_lon = next_lon
 
-    def return_base_action(self, time_step):
+    def return_base_action(self, time_step, Storage_base):
         """
-        ############################ def get_next_ship_state ############################
+        ############################ def return_base_action ############################
 
         [ 説明 ]
 
@@ -2314,8 +2314,17 @@ class TPG_ship:
 
             # 電気/MCHの積み下ろし
             if self.storage >= self.operational_reserve:
-                self.supply_elect = self.storage - self.operational_reserve
-                self.storage = self.operational_reserve
+                # 拠点の貯蔵容量を超える場合は拠点の容量に合わせる
+                Storage_base_capacity_dif = (
+                    Storage_base.max_storage - Storage_base.storage
+                )
+                tpg_ship_supply_elect = self.storage - self.operational_reserve
+                if tpg_ship_supply_elect > Storage_base_capacity_dif:
+                    self.supply_elect = Storage_base_capacity_dif
+                    self.storage = self.storage - Storage_base_capacity_dif
+                else:
+                    self.supply_elect = self.storage - self.operational_reserve
+                    self.storage = self.operational_reserve
             else:
                 self.supply_elect = 0
                 # self.storageはそのまま
@@ -2339,9 +2348,9 @@ class TPG_ship:
             # 発電船状態入力
             self.ship_state = 4  # 通常航行、待機 = 0 , 発電状態　= 1 , 台風追従　= 2 , 台風低速追従 = 2.5 , 拠点回航 = 3 , 待機位置回航 = 4
 
-    def return_standby_action(self, time_step):
+    def return_standby_action(self, time_step, Storage_base):
         """
-        ############################ def get_next_ship_state ############################
+        ############################ def return_standby_action ############################
 
         [ 説明 ]
 
@@ -2353,6 +2362,7 @@ class TPG_ship:
 
         引数 :
             time_step (int) : シミュレーションにおける時間の進み幅[hours]
+            Storage_base (class) : 貯蔵拠点の情報を持つクラス
 
 
         #############################################################################
@@ -2385,8 +2395,18 @@ class TPG_ship:
 
                 # 電気/MCHの積み下ろし
                 if self.storage >= self.operational_reserve:
-                    self.supply_elect = self.storage - self.operational_reserve
-                    self.storage = self.operational_reserve
+
+                    # 拠点の貯蔵容量を超える場合は拠点の容量に合わせる
+                    Storage_base_capacity_dif = (
+                        Storage_base.max_storage - Storage_base.storage
+                    )
+                    tpg_ship_supply_elect = self.storage - self.operational_reserve
+                    if tpg_ship_supply_elect > Storage_base_capacity_dif:
+                        self.supply_elect = Storage_base_capacity_dif
+                        self.storage = self.storage - Storage_base_capacity_dif
+                    else:
+                        self.supply_elect = self.storage - self.operational_reserve
+                        self.storage = self.operational_reserve
                 else:
                     self.supply_elect = 0
                     # self.storageはそのまま
@@ -2411,7 +2431,7 @@ class TPG_ship:
             # 発電船状態入力
             self.ship_state = 4  # 通常航行、待機 = 0 , 発電状態　= 1 , 台風追従　= 2 , 台風低速追従 = 2.5 , 拠点回航 = 3 , 待機位置回航 = 4
 
-    def typhoon_chase_action(self, time_step):
+    def typhoon_chase_action(self, time_step, Storage_base):
         """
         ############################ def typhoon_chase_action ############################
 
@@ -2510,7 +2530,7 @@ class TPG_ship:
                     1  # 台風に向かいながら拠点に帰港する行動のフラグ
                 )
 
-                self.return_base_action(time_step)
+                self.return_base_action(time_step, Storage_base)
 
                 self.brance_condition = "tracking typhoon via base"
 
@@ -2522,14 +2542,16 @@ class TPG_ship:
                         1  # 台風に向かいながら拠点に帰港する行動のフラグ
                     )
 
-                    self.return_base_action(time_step)
+                    self.return_base_action(time_step, Storage_base)
 
                     self.brance_condition = "tracking typhoon via base"
 
     # 状態量計算
     # 行動判定も入っているので機能の要素も入っている？
     # 全てのパラメータを次の時刻のものに変える処理
-    def get_next_ship_state(self, year, current_time, time_step, wind_data):
+    def get_next_ship_state(
+        self, year, current_time, time_step, wind_data, Storage_base
+    ):
         """
         ############################ def get_next_ship_state ############################
 
@@ -2576,7 +2598,7 @@ class TPG_ship:
             # if self.go_base == 1:
             self.speed_kt = self.nomal_ave_speed
 
-            self.return_base_action(time_step)
+            self.return_base_action(time_step, Storage_base)
 
             if self.standby_via_base == 1:
                 self.brance_condition = "return standby via base"
@@ -2655,7 +2677,7 @@ class TPG_ship:
                     ):
 
                         # 目標地点が変わりそうなら台風追従行動の方で再検討
-                        self.typhoon_chase_action(time_step)
+                        self.typhoon_chase_action(time_step, Storage_base)
 
         # 蓄電量90％未満の場合
         else:
@@ -2673,12 +2695,12 @@ class TPG_ship:
             if typhoon_num == 0:
 
                 if self.storage_percentage >= self.govia_base_judge_energy_storage_per:
-                    self.return_base_action(time_step)
+                    self.return_base_action(time_step, Storage_base)
                     self.brance_condition = "return standby via base"
                     self.standby_via_base = 1
                     self.target_TY = 0
                 else:
-                    self.return_standby_action(time_step)
+                    self.return_standby_action(time_step, Storage_base)
                     self.target_TY = 0
 
             # 追従対象の台風が存在する場合
@@ -2698,7 +2720,7 @@ class TPG_ship:
 
                     self.next_ship_TY_dis = self.get_distance(next_TY_locate)
 
-                self.typhoon_chase_action(time_step)
+                self.typhoon_chase_action(time_step, Storage_base)
 
                 self.target_TY_lat = self.target_TY_data[0, "FORE_LAT"]
                 self.target_TY_lon = self.target_TY_data[0, "FORE_LAT"]

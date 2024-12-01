@@ -59,12 +59,14 @@ def simulate(
     tpg_ship_1,  # TPG ship
     typhoon_path_forecaster,  # Forecaster
     st_base,  # Storage base
+    sp_base,  # Supply base
     support_ship_1,  # Support ship 1
     support_ship_2,  # Support ship 2
     typhoon_data_path,
     tpg_ship_log_file_path,
     tpg_ship_param_log_file_name,
     storage_base_log_file_path,
+    supply_base_log_file_path,
     support_ship_1_log_file_path,
     support_ship_2_log_file_path,
 ) -> None:
@@ -150,6 +152,9 @@ def simulate(
     ####################### Storage base ##########################
     st_base.set_outputs()
 
+    ####################### Supply base ##########################
+    sp_base.set_outputs()
+
     ####################### Support ship ##########################
     support_ship_1.set_outputs()
 
@@ -165,6 +170,10 @@ def simulate(
     ####################### Storage base ##########################
     st_base.outputs_append()
     stBASE_data = st_base.get_outputs(unix, date)
+
+    ####################### Supply base ##########################
+    sp_base.outputs_append()
+    spBASE_data = sp_base.get_outputs(unix, date)
 
     ####################### Support ship ##########################
     support_ship_1.outputs_append()
@@ -194,10 +203,17 @@ def simulate(
         )
 
         # timestep後の発電船の状態を取得
-        tpg_ship_1.get_next_ship_state(year, current_time, time_step, wind_data)
+        tpg_ship_1.get_next_ship_state(
+            year, current_time, time_step, wind_data, st_base
+        )
 
         # timestep後の中継貯蔵拠点と運搬船の状態を取得
         st_base.operation_base(
+            tpg_ship_1, support_ship_1, support_ship_2, year, current_time, time_step
+        )
+
+        # timestep後の供給拠点の状態を取得
+        sp_base.operation_base(
             tpg_ship_1, support_ship_1, support_ship_2, year, current_time, time_step
         )
 
@@ -215,6 +231,10 @@ def simulate(
         st_base.outputs_append()
         stBASE_data = st_base.get_outputs(unix, date)
 
+        ####################### supplyBASE ##########################
+        sp_base.outputs_append()
+        spBASE_data = sp_base.get_outputs(unix, date)
+
         ####################### supportSHIP ##########################
         support_ship_1.outputs_append()
         support_ship_2.outputs_append()
@@ -228,6 +248,7 @@ def simulate(
 
     GS_data.write_csv(tpg_ship_log_file_path)
     stBASE_data.write_csv(storage_base_log_file_path)
+    spBASE_data.write_csv(supply_base_log_file_path)
     spSHIP1_data.write_csv(support_ship_1_log_file_path)
     spSHIP2_data.write_csv(support_ship_2_log_file_path)
 

@@ -8,7 +8,7 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 
 from tpg_ship_sim import optuna_simulator, utils
-from tpg_ship_sim.model import forecaster, storage_base, support_ship, tpg_ship
+from tpg_ship_sim.model import forecaster, base, support_ship, tpg_ship
 
 
 # 進捗バーを更新するコールバック関数を定義
@@ -280,14 +280,25 @@ def run_simulation(cfg):
     typhoon_path_forecaster = forecaster.Forecaster(forecast_time, forecast_error_slope)
 
     # Storage base
-    storage_base_locate = cfg.storage_base.locate
-    storage_base_max_storage_wh = cfg.storage_base.max_storage_wh
-    st_base = storage_base.Storage_base(
-        storage_base_locate, storage_base_max_storage_wh
+    st_base_type = cfg.storage_base.base_type
+    st_base_locate = cfg.storage_base.locate
+    st_base_max_storage_wh = cfg.storage_base.max_storage_wh
+    st_base_call_per = cfg.storage_base.call_per
+    st_base = base.Base(
+        st_base_type, st_base_locate, st_base_max_storage_wh, st_base_call_per
+    )
+
+    # Supply base
+    sp_base_type = cfg.supply_base.base_type
+    sp_base_locate = cfg.supply_base.locate
+    sp_base_max_storage_wh = cfg.supply_base.max_storage_wh
+    sp_base_call_per = cfg.supply_base.call_per
+    sp_base = base.Base(
+        sp_base_type, sp_base_locate, sp_base_max_storage_wh, sp_base_call_per
     )
 
     # Support ship 1
-    support_ship_1_supply_base_locate = cfg.support_ship_1.supply_base_locate
+    support_ship_1_supply_base_locate = cfg.supply_base.locate
     support_ship_1_max_storage_wh = cfg.support_ship_1.max_storage_wh
     support_ship_1_max_speed_kt = cfg.support_ship_1.ship_speed_kt
     support_ship_1 = support_ship.Support_ship(
@@ -297,7 +308,7 @@ def run_simulation(cfg):
     )
 
     # Support ship 2
-    support_ship_2_supply_base_locate = cfg.support_ship_2.supply_base_locate
+    support_ship_2_supply_base_locate = cfg.supply_base.locate
     support_ship_2_max_storage_wh = cfg.support_ship_2.max_storage_wh
     support_ship_2_max_speed_kt = cfg.support_ship_2.ship_speed_kt
     support_ship_2 = support_ship.Support_ship(
@@ -313,6 +324,7 @@ def run_simulation(cfg):
         tpg_ship_1,
         typhoon_path_forecaster,
         st_base,
+        sp_base,
         support_ship_1,
         support_ship_2,
         typhoon_data_path,

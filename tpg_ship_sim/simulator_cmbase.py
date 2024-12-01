@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta, timezone
 
 import polars as pl
@@ -59,14 +58,15 @@ def simulate(
     simulation_end_time,
     tpg_ship_1,  # TPG ship
     typhoon_path_forecaster,  # Forecaster
-    st_base,  # Storage base
-    sp_base,  # Supply base
+    cm_base,  # Combined base
     support_ship_1,  # Support ship 1
     support_ship_2,  # Support ship 2
     typhoon_data_path,
-    output_folder_path,
+    tpg_ship_log_file_path,
     tpg_ship_param_log_file_name,
-    temp_tpg_ship_param_log_file_name,
+    combined_base_log_file_path,
+    support_ship_1_log_file_path,
+    support_ship_2_log_file_path,
 ) -> None:
 
     # タイムステップ
@@ -95,7 +95,7 @@ def simulate(
     time_step_unix = 3600 * time_step
 
     # 繰り返しの回数
-    record_count = int((unixtime_12_31 - current_time) / (time_step_unix) + 1)
+    record_count = int((unixtime_12_31 - current_time) / (time_step_unix))
 
     # 台風データ設定
     typhoon_path_forecaster.year = year
@@ -128,8 +128,8 @@ def simulate(
 
     # 拠点位置に関する設定
     # 発電船拠点位置
-    tpg_ship_1.base_lat = st_base.locate[0]
-    tpg_ship_1.base_lon = st_base.locate[1]
+    tpg_ship_1.base_lat = cm_base.locate[0]
+    tpg_ship_1.base_lon = cm_base.locate[1]
 
     tpg_ship_1.TY_start_time_list = get_TY_start_time(typhoon_data_path)
     # 待機位置に関する設定
@@ -147,8 +147,8 @@ def simulate(
     ####################### TPG ship ##########################
     tpg_ship_1.set_outputs()
 
-    ####################### Storage base ##########################
-    st_base.set_outputs()
+    ####################### Combined base ##########################
+    cm_base.set_outputs()
 
     ####################### Support ship ##########################
     support_ship_1.set_outputs()
@@ -162,9 +162,9 @@ def simulate(
     tpg_ship_1.outputs_append()
     GS_data = tpg_ship_1.get_outputs(unix, date)
 
-    ####################### Storage base ##########################
-    st_base.outputs_append()
-    stBASE_data = st_base.get_outputs(unix, date)
+    ####################### Combined base ##########################
+    cm_base.outputs_append()
+    cmBASE_data = cm_base.get_outputs(unix, date)
 
     ####################### Support ship ##########################
     support_ship_1.outputs_append()
@@ -194,10 +194,12 @@ def simulate(
         )
 
         # timestep後の発電船の状態を取得
-        tpg_ship_1.get_next_ship_state(year, current_time, time_step, wind_data, st_base)
+        tpg_ship_1.get_next_ship_state(
+            year, current_time, time_step, wind_data, cm_base
+        )
 
-        # timestep後の中継貯蔵拠点と運搬船の状態を取得
-        st_base.operation_base(
+        # timestep後の兼用拠点の状態を取得
+        cm_base.operation_base(
             tpg_ship_1, support_ship_1, support_ship_2, year, current_time, time_step
         )
 
@@ -211,9 +213,9 @@ def simulate(
         tpg_ship_1.outputs_append()
         GS_data = tpg_ship_1.get_outputs(unix, date)
 
-        ####################### storageBASE ##########################
-        st_base.outputs_append()
-        stBASE_data = st_base.get_outputs(unix, date)
+        ####################### combinedBASE ##########################
+        cm_base.outputs_append()
+        cmBASE_data = cm_base.get_outputs(unix, date)
 
         ####################### supportSHIP ##########################
         support_ship_1.outputs_append()
@@ -224,29 +226,12 @@ def simulate(
 
     # 出力
     tpg_ship_data = tpg_ship_1.get_outputs_for_evaluation()
-    # tpg_ship_param_log_file_pathのファイルにデータを追加する
-    # 一時的に試行データを記録
-    temp_csv_path = os.path.join(output_folder_path, temp_tpg_ship_param_log_file_name)
-    if not os.path.exists(temp_csv_path):
-        tpg_ship_data.write_csv(temp_csv_path)
-    else:
-        existing_data = pl.read_csv(temp_csv_path)
-        combined_data = pl.concat(
-            [existing_data, tpg_ship_data], how="vertical_relaxed"
-        )
-        combined_data.write_csv(temp_csv_path)
+    tpg_ship_data.write_csv(tpg_ship_param_log_file_name)
 
-    # 最終CSVファイルに追記し、一時ファイルを削除
-    final_csv_path = os.path.join(output_folder_path, tpg_ship_param_log_file_name)
-    if os.path.exists(final_csv_path):
-        final_data = pl.read_csv(final_csv_path)
-        final_data = pl.concat([final_data, tpg_ship_data], how="vertical_relaxed")
-    else:
-        final_data = tpg_ship_data
-
-    final_data.write_csv(final_csv_path)
-
-    os.remove(temp_csv_path)
+    GS_data.write_csv(tpg_ship_log_file_path)
+    cmBASE_data.write_csv(combined_base_log_file_path)
+    spSHIP1_data.write_csv(support_ship_1_log_file_path)
+    spSHIP2_data.write_csv(support_ship_2_log_file_path)
 
 
 ############################################################################################

@@ -5,7 +5,7 @@ from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from tpg_ship_sim import simulator, utils
+from tpg_ship_sim import simulator_cmbase, utils
 from tpg_ship_sim.model import base, forecaster, support_ship, tpg_ship
 
 
@@ -20,8 +20,7 @@ def main(cfg: DictConfig) -> None:
 
     tpg_ship_log_file_name = cfg.output_env.tpg_ship_log_file_name
     tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
-    storage_base_log_file_name = cfg.output_env.storage_base_log_file_name
-    supply_base_log_file_name = cfg.output_env.supply_base_log_file_name
+    combined_base_log_file_name = cfg.output_env.combined_base_log_file_name
     support_ship_1_log_file_name = cfg.output_env.support_ship_1_log_file_name
     support_ship_2_log_file_name = cfg.output_env.support_ship_2_log_file_name
     png_map_folder_name = cfg.output_env.png_map_folder_name
@@ -96,26 +95,17 @@ def main(cfg: DictConfig) -> None:
     forecast_error_slope = cfg.forecaster.forecast_error_slope
     typhoon_path_forecaster = forecaster.Forecaster(forecast_time, forecast_error_slope)
 
-    # Storage base
-    st_base_type = cfg.storage_base.base_type
-    st_base_locate = cfg.storage_base.locate
-    st_base_max_storage_wh = cfg.storage_base.max_storage_wh
-    st_base_call_per = cfg.storage_base.call_per
-    st_base = base.Base(
-        st_base_type, st_base_locate, st_base_max_storage_wh, st_base_call_per
-    )
-
-    # Supply base
-    sp_base_type = cfg.supply_base.base_type
-    sp_base_locate = cfg.supply_base.locate
-    sp_base_max_storage_wh = cfg.supply_base.max_storage_wh
-    sp_base_call_per = cfg.supply_base.call_per
-    sp_base = base.Base(
-        sp_base_type, sp_base_locate, sp_base_max_storage_wh, sp_base_call_per
+    # Combined base
+    cm_base_type = cfg.combined_base.base_type
+    cm_base_locate = cfg.combined_base.locate
+    cm_base_max_storage_wh = cfg.combined_base.max_storage_wh
+    cm_base_call_per = cfg.combined_base.call_per
+    cm_base = base.Base(
+        cm_base_type, cm_base_locate, cm_base_max_storage_wh, cm_base_call_per
     )
 
     # Support ship 1
-    support_ship_1_supply_base_locate = cfg.supply_base.locate
+    support_ship_1_supply_base_locate = cfg.combined_base.locate
     support_ship_1_max_storage_wh = cfg.support_ship_1.max_storage_wh
     support_ship_1_max_speed_kt = cfg.support_ship_1.ship_speed_kt
     support_ship_1 = support_ship.Support_ship(
@@ -125,7 +115,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Support ship 2
-    support_ship_2_supply_base_locate = cfg.supply_base.locate
+    support_ship_2_supply_base_locate = cfg.combined_base.locate
     support_ship_2_max_storage_wh = cfg.support_ship_2.max_storage_wh
     support_ship_2_max_speed_kt = cfg.support_ship_2.ship_speed_kt
     support_ship_2 = support_ship.Support_ship(
@@ -134,20 +124,18 @@ def main(cfg: DictConfig) -> None:
         support_ship_2_max_speed_kt,
     )
 
-    simulator.simulate(
+    simulator_cmbase.simulate(
         simulation_start_time,
         simulation_end_time,
         tpg_ship_1,  # TPG ship
         typhoon_path_forecaster,  # Forecaster
-        st_base,  # Storage base
-        sp_base,  # Supply base
+        cm_base,  # Combined base
         support_ship_1,  # Support ship 1
         support_ship_2,  # Support ship 2
         typhoon_data_path,
         output_folder_path + "/" + tpg_ship_log_file_name,
         output_folder_path + "/" + tpg_ship_param_log_file_name,
-        output_folder_path + "/" + storage_base_log_file_name,
-        output_folder_path + "/" + supply_base_log_file_name,
+        output_folder_path + "/" + combined_base_log_file_name,
         output_folder_path + "/" + support_ship_1_log_file_name,
         output_folder_path + "/" + support_ship_2_log_file_name,
     )
@@ -156,7 +144,7 @@ def main(cfg: DictConfig) -> None:
     utils.draw_map(
         typhoon_data_path,
         output_folder_path + "/" + tpg_ship_log_file_name,
-        output_folder_path + "/" + storage_base_log_file_name,
+        output_folder_path + "/" + combined_base_log_file_name,
         output_folder_path + "/" + support_ship_1_log_file_name,
         output_folder_path + "/" + support_ship_2_log_file_name,
         output_folder_path + "/" + png_map_folder_name,
@@ -166,7 +154,7 @@ def main(cfg: DictConfig) -> None:
     utils.draw_graph(
         typhoon_data_path,
         output_folder_path + "/" + tpg_ship_log_file_name,
-        output_folder_path + "/" + storage_base_log_file_name,
+        output_folder_path + "/" + combined_base_log_file_name,
         output_folder_path + "/" + png_graph_folder_name,
     )
     progress_bar.update(1)
