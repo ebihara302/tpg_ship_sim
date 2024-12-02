@@ -1,8 +1,8 @@
 env:
   #typhoon_data_path: "data/typhoon_path/typhoon_data_2019_6_interval.csv"
-  typhoon_data_path: "data/typhoon_path/typhoon_data_2018_6_interval.csv"
-  simulation_start_time: "2018-01-01 00:00:00"
-  simulation_end_time: "2018-12-31 18:00:00"
+  typhoon_data_path: "data/typhoon_path/generated_typhoon_data_2023_6_interval_tynum20.csv"
+  simulation_start_time: "2023-01-01 00:00:00"
+  simulation_end_time: "2023-12-31 18:00:00"
   
 tpg_ship:
   #TPG ship performance model
@@ -61,20 +61,25 @@ combined_base: # storage_baseとsupply_baseと共存できない
 support_ship_1:
   max_storage_wh: 35000000000 # Wh 0の場合は船の削除となる
   ship_speed_kt: 5 # kt
+  EP_max_storage_wh: 14200000000 # Wh
+  elect_trust_efficiency: 0.83 # 電気推進機の効率
 
 support_ship_2:
   max_storage_wh: 0 # Wh 0の場合は船の削除となる
   ship_speed_kt: 5 # kt
+  EP_max_storage_wh: 14200000000 # Wh
+  elect_trust_efficiency: 0.83 # 電気推進機の効率
+
 
 output_env:
   tpg_ship_log_file_name: "tpg_ship_1.csv"
-  tpg_ship_param_log_file_name: "tpg_ship_param_1.csv"
   tpg_ship_sensitivity_analysis_param_log_file_name: "tpg_ship_sensitivity_analysis_param_1.csv"
   storage_base_log_file_name: "storage_base_1.csv"
   supply_base_log_file_name: "supply_base_1.csv"
   combined_base_log_file_name: "combined_base_1.csv"
   support_ship_1_log_file_name: "support_ship_1.csv"
   support_ship_2_log_file_name: "support_ship_2.csv"
+  models_param_log_file_name: "models_param_1.csv"
   png_map_folder_name: "png_map/"
   png_graph_folder_name: "png_graph/"
   png_map_graph_folder_name: "png_map_graph/"

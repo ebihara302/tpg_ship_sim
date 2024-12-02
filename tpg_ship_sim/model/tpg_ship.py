@@ -492,6 +492,9 @@ class TPG_ship:
         )
         total_ship_weight_per_body = total_ship_weight / self.hull_num
 
+        # DWTの記録
+        self.ship_dwt = total_ship_weight
+
         # 船体の寸法を計算
         if self.storage_method == 1:  # 電気貯蔵 = バルカー型
             if total_ship_weight_per_body < 220000:
@@ -558,6 +561,7 @@ class TPG_ship:
         # ウインドチャレンジャーの帆を基準とする
         base_sail_area = 880  # 基準帆面積 [m^2]
         base_sail_width = 15  # 基準帆幅 [m]
+        base_sail_height = 50  # 基準帆高さ [m]
         assumed_num_sails = 100  # 帆の仮想本数
 
         # 1. 帆の本数を仮定して、重量から船の寸法を計算する
@@ -582,6 +586,7 @@ class TPG_ship:
             scale_factor = (self.sail_area / base_sail_area) ** 0.5
             sail_width = base_sail_width * scale_factor
             self.sail_width = sail_width
+            self.sail_height = base_sail_height * scale_factor
             # 帆の搭載間隔を指定
             sail_space_per_sail = self.sail_width * self.sail_space
 

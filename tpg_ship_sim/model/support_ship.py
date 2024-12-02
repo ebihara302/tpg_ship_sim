@@ -30,7 +30,7 @@ class Support_ship:
         ship_lat (float) : 補助船のその時刻での緯度
         ship_lon (float) : 補助船のその時刻での経度
         max_storage (float) : 中継貯蔵拠点の蓄電容量の上限値
-        support_ship_speed (float) : 補助船の最大船速
+        support_ship_speed (float) : 補助船の最大船速[kt]
         storage (float) : 中継貯蔵拠点のその時刻での蓄電量
         ship_gene (int) : 補助船が発生したかどうかのフラグ
         arrived_supplybase (int) : 供給拠点に到着したかどうかのフラグ
@@ -47,17 +47,33 @@ class Support_ship:
     arrived_supplybase = 1
     arrived_storagebase = 0
 
+    tank_method = 2  # MCH
+    batttery_method = 1  # ELECT
+
     target_lat = np.nan
     target_lon = np.nan
     brance_condition = "no action"
 
-    def __init__(self, supply_base_locate, max_storage_wh, max_speed_kt) -> None:
+    total_consumption_elect = 0
+    total_received_elect = 0
+
+    def __init__(
+        self,
+        supply_base_locate,
+        max_storage_wh,
+        support_ship_speed_kt,
+        EP_max_storage,
+        elect_trust_efficiency,
+    ) -> None:
         self.supplybase_lat = supply_base_locate[0]
         self.supplybase_lon = supply_base_locate[1]
         self.ship_lat = supply_base_locate[0]
         self.ship_lon = supply_base_locate[1]
         self.max_storage = max_storage_wh
-        self.support_ship_speed = max_speed_kt
+        self.support_ship_speed = support_ship_speed_kt
+        self.EP_max_storage = EP_max_storage
+        self.EP_storage = self.EP_max_storage
+        self.elect_trust_efficiency = elect_trust_efficiency
 
     def set_outputs(self):
         """
@@ -75,9 +91,12 @@ class Support_ship:
         self.sp_target_lon_list = []
         self.sp_storage_list = []
         self.sp_st_per_list = []
+        self.sp_ep_storage_list = []
         self.sp_ship_lat_list = []
         self.sp_ship_lon_list = []
         self.sp_brance_condition_list = []
+        self.sp_total_consumption_elect_list = []
+        self.sp_total_received_elect_list = []
 
     def outputs_append(self):
         """
@@ -98,9 +117,12 @@ class Support_ship:
             self.sp_st_per_list.append(0)
         else:
             self.sp_st_per_list.append(float(self.storage / self.max_storage * 100))
+        self.sp_ep_storage_list.append(float(self.EP_storage))
         self.sp_ship_lat_list.append(float(self.ship_lat))
         self.sp_ship_lon_list.append(float(self.ship_lon))
         self.sp_brance_condition_list.append(self.brance_condition)
+        self.sp_total_consumption_elect_list.append(float(self.total_consumption_elect))
+        self.sp_total_received_elect_list.append(float(self.total_received_elect))
 
     def get_outputs(self, unix_list, date_list):
         data = pl.DataFrame(
@@ -113,11 +135,102 @@ class Support_ship:
                 "LON": self.sp_ship_lon_list,
                 "STORAGE[Wh]": self.sp_storage_list,
                 "STORAGE PER[%]": self.sp_st_per_list,
+                "EP STORAGE[Wh]": self.sp_ep_storage_list,
                 "BRANCH CONDITION": self.sp_brance_condition_list,
+                "TOTAL CONSUMPTION ELECT[Wh]": self.sp_total_consumption_elect_list,
+                "TOTAL RECEIVED ELECT[Wh]": self.sp_total_received_elect_list,
             }
         )
 
         return data
+
+    def cal_dwt(self, method, storage):
+        """
+        ############################ def cal_dwt ############################
+
+        [ 説明 ]
+
+        載貨重量トンを算出する関数です。
+
+        ##############################################################################
+
+        引数 :
+            storage_method (int) : 貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+            storage (float) : 貯蔵容量[Wh]
+
+        戻り値 :
+            dwt (float) : 載貨重量トン
+
+        #############################################################################
+        """
+        # 載貨重量トンを算出する。単位はt。
+
+        if method == 1:  # 電気貯蔵
+            # 重量エネルギー密度1000Wh/kgの電池を使うこととする。
+            dwt = storage / 1000 / 1000
+
+        elif method == 2:  # 水素貯蔵
+            # 有機ハイドライドで水素を貯蔵することとする。
+            dwt = storage / 5000 * 0.0898 / 47.4
+
+        else:
+            print("cannot cal")
+
+        return dwt
+
+    def cal_maxspeedpower(
+        self,
+        max_speed,
+        storage1,
+        storage1_method,
+        storage2,
+        storage2_method,
+    ):
+        """
+        ############################ def cal_maxspeedpower ############################
+
+        [ 説明 ]
+
+        最大船速時に船体を進めるのに必要な出力を算出する関数です。
+
+        ##############################################################################
+
+        引数 :
+            max_speed (float) : 最大船速(kt)
+            storage1 (float) : メインストレージの貯蔵容量1[Wh]
+            storage1_method (int) : メインストレージの貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+            storage2 (float) : 電気推進用の貯蔵容量[Wh]
+            storage2_method (int) : 電気推進用の貯蔵方法の種類。1=電気貯蔵,2=水素貯蔵
+
+        戻り値 :
+            power (float) : 船体を進めるのに必要な出力
+
+        #############################################################################
+        """
+
+        main_storage_dwt = self.cal_dwt(storage1_method, storage1)
+        electric_propulsion_storage_dwt = self.cal_dwt(storage2_method, storage2)
+
+        self.main_storage_weight = main_storage_dwt
+        self.ep_storage_weight = electric_propulsion_storage_dwt
+
+        sum_dwt_t = main_storage_dwt + electric_propulsion_storage_dwt
+        self.ship_dwt = sum_dwt_t
+
+        if storage1_method == 1:  # 電気貯蔵
+            # バルカー型
+            k = 1.7
+            power = k * ((sum_dwt_t) ** (2 / 3)) * (max_speed**3)
+
+        elif storage1_method == 2:  # 水素貯蔵
+            # タンカー型
+            k = 2.2
+            power = k * ((sum_dwt_t) ** (2 / 3)) * (max_speed**3)
+
+        else:
+            print("cannot cal")
+
+        return power
 
     # 状態量計算
     def get_distance(self, storage_base_position):
@@ -148,7 +261,7 @@ class Support_ship:
         return distance
 
     # 状態量計算
-    def change_kt_kmh(self):
+    def change_kt_kmh(self, ship_speed_kt):
         """
         ############################ def change_kt_kmh ############################
 
@@ -165,11 +278,11 @@ class Support_ship:
         #############################################################################
         """
 
-        speed_kmh = self.speed_kt * 1.852
+        speed_kmh = ship_speed_kt * 1.852
 
         return speed_kmh
 
-    # 拠点または観測地点からuuvまでの距離取得
+    # 拠点または観測地点からの距離を計算
     def get_base_dis_data(self, storage_base_position):
         """
         ############################ def get_base_dis_data ############################
@@ -251,7 +364,7 @@ class Support_ship:
         Goal_now_distance = self.get_distance(target_position)  # [km]
 
         # 船がtime_step時間で進める距離
-        advance_distance = self.change_kt_kmh() * time_step
+        advance_distance = self.change_kt_kmh(self.speed_kt) * time_step
 
         # 緯度の差
         g_lat = self.target_lat
@@ -290,7 +403,8 @@ class Support_ship:
             # 次の時間にいるであろう経度
             next_lon = g_lon
 
-        next_position = (next_lat, next_lon)
+        next_position = [next_lat, next_lon]
+
         self.ship_lat = next_lat
         self.ship_lon = next_lon
 
@@ -353,9 +467,9 @@ class Support_ship:
         self.target_lat = storage_base_position[0]
         self.target_lon = storage_base_position[1]
 
-        storagebase_ship_dis_time = (
-            self.get_distance(storage_base_position) / self.change_kt_kmh()
-        )
+        storagebase_ship_dis_time = self.get_distance(
+            storage_base_position
+        ) / self.change_kt_kmh(self.speed_kt)
         self.arrived_storagebase = 0
         self.arrived_supplybase = 0
 
@@ -397,8 +511,8 @@ class Support_ship:
         self.target_lat = self.supplybase_lat
         self.target_lon = self.supplybase_lon
         supplybase_position = (self.supplybase_lat, self.supplybase_lon)
-        uuv_ship_dis_time = (
-            self.get_distance(supplybase_position) / self.change_kt_kmh()
+        uuv_ship_dis_time = self.get_distance(supplybase_position) / self.change_kt_kmh(
+            self.speed_kt
         )
         self.arrived_supplybase = 0
 
@@ -425,6 +539,9 @@ class Support_ship:
 
     def get_next_ship_state(self, storage_base_position, year, current_time, time_step):
 
+        # 移動まえの船の座標を取得
+        position_before = [self.ship_lat, self.ship_lon]
+
         if (self.arrived_storagebase == 0) and (self.arrived_supplybase == 1):
             self.go_storagebase_action(storage_base_position, time_step)
         elif (self.arrived_storagebase == 1) and (self.arrived_supplybase == 0):
@@ -442,3 +559,34 @@ class Support_ship:
             # 目標地点との距離
             target_position = (self.target_lat, self.target_lon)
             self.target_distance = self.get_distance(target_position)
+
+        # 移動後の船の座標を取得
+        position_after = [self.ship_lat, self.ship_lon]
+
+        # 船の座標が変わった場合のみ消費電力を計算する
+        if position_after != position_before:
+            # 現在位置と次の位置の距離を計算して、船速を用いて航行時間を計算して消費電力を計算する
+            distance = geodesic(position_before, position_after).km
+            consumption_elect = (
+                self.cal_maxspeedpower(
+                    self.speed_kt,
+                    self.storage,
+                    self.tank_method,
+                    self.EP_max_storage,
+                    self.batttery_method,
+                )
+                / self.elect_trust_efficiency
+            ) * (distance / self.change_kt_kmh(self.support_ship_speed))
+            self.total_consumption_elect += consumption_elect
+            self.EP_storage -= consumption_elect
+            self.total_received_elect += 0
+
+        else:
+            if self.EP_storage < self.EP_max_storage:
+                self.total_received_elect += self.EP_max_storage - self.EP_storage
+                self.total_consumption_elect += 0
+                self.EP_storage = self.EP_max_storage
+
+            else:
+                self.total_received_elect += 0
+                self.total_consumption_elect += 0

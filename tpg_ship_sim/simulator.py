@@ -64,7 +64,6 @@ def simulate(
     support_ship_2,  # Support ship 2
     typhoon_data_path,
     tpg_ship_log_file_path,
-    tpg_ship_param_log_file_name,
     storage_base_log_file_path,
     supply_base_log_file_path,
     support_ship_1_log_file_path,
@@ -243,9 +242,6 @@ def simulate(
         spSHIP2_data = support_ship_2.get_outputs(unix, date)
 
     # 出力
-    tpg_ship_data = tpg_ship_1.get_outputs_for_evaluation()
-    tpg_ship_data.write_csv(tpg_ship_param_log_file_name)
-
     GS_data.write_csv(tpg_ship_log_file_path)
     stBASE_data.write_csv(storage_base_log_file_path)
     spBASE_data.write_csv(supply_base_log_file_path)

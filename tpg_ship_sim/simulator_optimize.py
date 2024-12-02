@@ -65,8 +65,6 @@ def simulate(
     support_ship_2,  # Support ship 2
     typhoon_data_path,
     output_folder_path,
-    tpg_ship_param_log_file_name,
-    temp_tpg_ship_param_log_file_name,
 ) -> None:
 
     # タイムステップ
@@ -121,22 +119,12 @@ def simulate(
     # 発電船パラメータ設定
     tpg_ship_1.forecast_time = typhoon_path_forecaster.forecast_time
 
-    # 運搬船設定
-    # support_ship.Support_ship.max_storage = tpg_ship_1.max_storage * 0.5
-    # support_ship_1 = support_ship.Support_ship()
-    # support_ship_2 = support_ship.Support_ship()
-
     # 拠点位置に関する設定
     # 発電船拠点位置
     tpg_ship_1.base_lat = st_base.locate[0]
     tpg_ship_1.base_lon = st_base.locate[1]
 
     tpg_ship_1.TY_start_time_list = get_TY_start_time(typhoon_data_path)
-    # 待機位置に関する設定
-    # tpg_ship_1.standby_lat = st_base.locate[0]
-    # tpg_ship_1.standby_lon = st_base.locate[1]
-
-    # tpg_ship_1.govia_base_judge_energy_storage_per = 20
 
     tpg_ship_1.set_initial_states()
 
@@ -149,6 +137,9 @@ def simulate(
 
     ####################### Storage base ##########################
     st_base.set_outputs()
+
+    ####################### Supply base ##########################
+    sp_base.set_outputs()
 
     ####################### Support ship ##########################
     support_ship_1.set_outputs()
@@ -165,6 +156,10 @@ def simulate(
     ####################### Storage base ##########################
     st_base.outputs_append()
     stBASE_data = st_base.get_outputs(unix, date)
+
+    ####################### Supply base ##########################
+    sp_base.outputs_append()
+    spBASE_data = sp_base.get_outputs(unix, date)
 
     ####################### Support ship ##########################
     support_ship_1.outputs_append()
@@ -194,10 +189,17 @@ def simulate(
         )
 
         # timestep後の発電船の状態を取得
-        tpg_ship_1.get_next_ship_state(year, current_time, time_step, wind_data, st_base)
+        tpg_ship_1.get_next_ship_state(
+            year, current_time, time_step, wind_data, st_base
+        )
 
         # timestep後の中継貯蔵拠点と運搬船の状態を取得
         st_base.operation_base(
+            tpg_ship_1, support_ship_1, support_ship_2, year, current_time, time_step
+        )
+
+        # timestep後の供給拠点の状態を取得
+        sp_base.operation_base(
             tpg_ship_1, support_ship_1, support_ship_2, year, current_time, time_step
         )
 
@@ -215,6 +217,10 @@ def simulate(
         st_base.outputs_append()
         stBASE_data = st_base.get_outputs(unix, date)
 
+        ####################### supplyBASE ##########################
+        sp_base.outputs_append()
+        spBASE_data = sp_base.get_outputs(unix, date)
+
         ####################### supportSHIP ##########################
         support_ship_1.outputs_append()
         support_ship_2.outputs_append()
@@ -222,31 +228,31 @@ def simulate(
         spSHIP1_data = support_ship_1.get_outputs(unix, date)
         spSHIP2_data = support_ship_2.get_outputs(unix, date)
 
-    # 出力
-    tpg_ship_data = tpg_ship_1.get_outputs_for_evaluation()
-    # tpg_ship_param_log_file_pathのファイルにデータを追加する
-    # 一時的に試行データを記録
-    temp_csv_path = os.path.join(output_folder_path, temp_tpg_ship_param_log_file_name)
-    if not os.path.exists(temp_csv_path):
-        tpg_ship_data.write_csv(temp_csv_path)
-    else:
-        existing_data = pl.read_csv(temp_csv_path)
-        combined_data = pl.concat(
-            [existing_data, tpg_ship_data], how="vertical_relaxed"
-        )
-        combined_data.write_csv(temp_csv_path)
+    # # 出力
+    # tpg_ship_data = tpg_ship_1.get_outputs_for_evaluation()
+    # # tpg_ship_param_log_file_pathのファイルにデータを追加する
+    # # 一時的に試行データを記録
+    # temp_csv_path = os.path.join(output_folder_path, temp_tpg_ship_param_log_file_name)
+    # if not os.path.exists(temp_csv_path):
+    #     tpg_ship_data.write_csv(temp_csv_path)
+    # else:
+    #     existing_data = pl.read_csv(temp_csv_path)
+    #     combined_data = pl.concat(
+    #         [existing_data, tpg_ship_data], how="vertical_relaxed"
+    #     )
+    #     combined_data.write_csv(temp_csv_path)
 
-    # 最終CSVファイルに追記し、一時ファイルを削除
-    final_csv_path = os.path.join(output_folder_path, tpg_ship_param_log_file_name)
-    if os.path.exists(final_csv_path):
-        final_data = pl.read_csv(final_csv_path)
-        final_data = pl.concat([final_data, tpg_ship_data], how="vertical_relaxed")
-    else:
-        final_data = tpg_ship_data
+    # # 最終CSVファイルに追記し、一時ファイルを削除
+    # final_csv_path = os.path.join(output_folder_path, tpg_ship_param_log_file_name)
+    # if os.path.exists(final_csv_path):
+    #     final_data = pl.read_csv(final_csv_path)
+    #     final_data = pl.concat([final_data, tpg_ship_data], how="vertical_relaxed")
+    # else:
+    #     final_data = tpg_ship_data
 
-    final_data.write_csv(final_csv_path)
+    # final_data.write_csv(final_csv_path)
 
-    os.remove(temp_csv_path)
+    # os.remove(temp_csv_path)
 
 
 ############################################################################################

@@ -19,7 +19,6 @@ def main(cfg: DictConfig) -> None:
     output_folder_path = HydraConfig.get().run.dir
 
     tpg_ship_log_file_name = cfg.output_env.tpg_ship_log_file_name
-    tpg_ship_param_log_file_name = cfg.output_env.tpg_ship_param_log_file_name
     combined_base_log_file_name = cfg.output_env.combined_base_log_file_name
     support_ship_1_log_file_name = cfg.output_env.support_ship_1_log_file_name
     support_ship_2_log_file_name = cfg.output_env.support_ship_2_log_file_name
@@ -108,20 +107,28 @@ def main(cfg: DictConfig) -> None:
     support_ship_1_supply_base_locate = cfg.combined_base.locate
     support_ship_1_max_storage_wh = cfg.support_ship_1.max_storage_wh
     support_ship_1_max_speed_kt = cfg.support_ship_1.ship_speed_kt
+    support_ship_1_EP_max_storage_wh = cfg.support_ship_1.EP_max_storage_wh
+    support_ship_1_elect_trust_efficiency = cfg.support_ship_1.elect_trust_efficiency
     support_ship_1 = support_ship.Support_ship(
         support_ship_1_supply_base_locate,
         support_ship_1_max_storage_wh,
         support_ship_1_max_speed_kt,
+        support_ship_1_EP_max_storage_wh,
+        support_ship_1_elect_trust_efficiency,
     )
 
     # Support ship 2
     support_ship_2_supply_base_locate = cfg.combined_base.locate
     support_ship_2_max_storage_wh = cfg.support_ship_2.max_storage_wh
     support_ship_2_max_speed_kt = cfg.support_ship_2.ship_speed_kt
+    support_ship_2_EP_max_storage_wh = cfg.support_ship_2.EP_max_storage_wh
+    support_ship_2_elect_trust_efficiency = cfg.support_ship_2.elect_trust_efficiency
     support_ship_2 = support_ship.Support_ship(
         support_ship_2_supply_base_locate,
         support_ship_2_max_storage_wh,
         support_ship_2_max_speed_kt,
+        support_ship_2_EP_max_storage_wh,
+        support_ship_2_elect_trust_efficiency,
     )
 
     simulator_cmbase.simulate(
@@ -134,7 +141,6 @@ def main(cfg: DictConfig) -> None:
         support_ship_2,  # Support ship 2
         typhoon_data_path,
         output_folder_path + "/" + tpg_ship_log_file_name,
-        output_folder_path + "/" + tpg_ship_param_log_file_name,
         output_folder_path + "/" + combined_base_log_file_name,
         output_folder_path + "/" + support_ship_1_log_file_name,
         output_folder_path + "/" + support_ship_2_log_file_name,
