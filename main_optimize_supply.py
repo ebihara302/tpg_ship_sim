@@ -704,9 +704,6 @@ def run_simulation(cfg):
         - tpg_ship_1.minus_storage_penalty_list[-1]
         - total_cost / 100
     )
-    objective_value = (
-        total_profit * 100 - total_cost - tpg_ship_1.minus_storage_penalty_list[-1]
-    )
 
     # 結果をデータフレームに出力
     data = simulation_result_to_df(
