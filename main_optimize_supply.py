@@ -812,8 +812,8 @@ def objective(trial):
     stbase_max_storage_ton = stbase_max_storage_ton_100k * 100000
     config.storage_base.max_storage_wh = (stbase_max_storage_ton / 379) * 10**9
 
-    # 輸送船呼び出しタイミングに関する変更
-    config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
+    # # 輸送船呼び出しタイミングに関する変更
+    # config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
 
     ############ Supply Baseのパラメータを指定 ############
 
