@@ -383,96 +383,103 @@ def simulation_result_to_df(
         {
             # TPG ship (列名の先頭にT_を付与。探索しないものはコメントアウト)
             ## 装置パラメータ関連
-            # "hull_num": [tpg_ship.hull_num],
-            # "storage_method": [tpg_ship.storage_method],
-            "T_max_storage[GWh]": [tpg_ship.max_storage / 10**9],
+            # "T_hull_num": [int(tpg_ship.hull_num)],
+            # "T_storage_method": [int(tpg_ship.storage_method)],
+            "T_max_storage[GWh]": [float(tpg_ship.max_storage / 10**9)],
             "T_EP_max_storage_wh[GWh]": [
-                tpg_ship.electric_propulsion_max_storage_wh / 10**8
+                float(tpg_ship.electric_propulsion_max_storage_wh / 10**8)
             ],
-            "T_sail_num": [tpg_ship.sail_num],
-            "T_sail_area[m2]": [tpg_ship.sail_area],
-            "T_sail_width[m]": [tpg_ship.sail_width],
-            "T_sail_height[m]": [tpg_ship.sail_height],
-            "T_sail_space": [tpg_ship.sail_space],
-            "T_sail_steps": [tpg_ship.sail_steps],
-            "T_sail_weight": [tpg_ship.sail_weight],
-            "T_num_sails_per_row": [tpg_ship.num_sails_per_row],
-            "T_num_sails_rows": [tpg_ship.num_sails_rows],
-            "T_sail_penalty": [tpg_ship.sail_penalty],
-            "T_dwt[t]": [tpg_ship.ship_dwt],
-            "T_hull_L_oa[m]": [tpg_ship.hull_L_oa],
-            "T_hull_B[m]": [tpg_ship.hull_B],
-            # "elect_trust_efficiency": [tpg_ship.elect_trust_efficiency],
-            # "MCH_to_elect_efficiency": [tpg_ship.MCH_to_elect_efficiency],
-            # "elect_to_MCH_efficiency": [tpg_ship.elect_to_MCH_efficiency],
-            "T_generator_num": [tpg_ship.generator_num],
-            "T_generator_turbine_radius[m]": [tpg_ship.generator_turbine_radius],
-            "T_generator_pillar_width": [tpg_ship.generator_pillar_width],
-            "T_generator_rated_output[GW]": [tpg_ship.generator_rated_output_w / 10**9],
-            # "generator_efficiency": [tpg_ship.generator_efficiency],
-            # "generator_drag_coefficient": [tpg_ship.generator_drag_coefficient],
-            # "generator_pillar_chord": [tpg_ship.generator_pillar_chord],
-            # "generator_pillar_max_tickness": [tpg_ship.generator_pillar_max_tickness],
-            "T_generating_speed[kt]": [tpg_ship.generating_speed_kt],
-            ## 航行・判断パラメータ関連
-            "T_tpgship_return_speed[kt]": [tpg_ship.nomal_ave_speed],
-            # "max_speed": [tpg_ship.max_speed],
-            "T_forecast_weight": [tpg_ship.forecast_weight],
+            "T_sail_num": [int(tpg_ship.sail_num)],  # Int64 型の例
+            "T_sail_area[m2]": [int(tpg_ship.sail_area)],
+            "T_sail_width[m]": [float(tpg_ship.sail_width)],
+            "T_sail_height[m]": [float(tpg_ship.sail_height)],
+            "T_sail_space": [float(tpg_ship.sail_space)],
+            "T_sail_steps": [int(tpg_ship.sail_steps)],  # Int64 型の例
+            "T_sail_weight": [float(tpg_ship.sail_weight)],
+            "T_num_sails_per_row": [int(tpg_ship.num_sails_per_row)],  # Int64 型の例
+            "T_num_sails_rows": [int(tpg_ship.num_sails_rows)],  # Int64 型の例
+            "T_sail_penalty": [float(tpg_ship.sail_penalty)],
+            "T_dwt[t]": [float(tpg_ship.ship_dwt)],
+            "T_hull_L_oa[m]": [float(tpg_ship.hull_L_oa)],
+            "T_hull_B[m]": [float(tpg_ship.hull_B)],
+            # "T_elect_trust_efficiency": [float(tpg_ship.elect_trust_efficiency)],
+            # "T_MCH_to_elect_efficiency": [float(tpg_ship.MCH_to_elect_efficiency)],
+            # "T_elect_to_MCH_efficiency": [float(tpg_ship.elect_to_MCH_efficiency)],
+            "T_generator_num": [int(tpg_ship.generator_num)],  # Int64 型の例
+            "T_generator_turbine_radius[m]": [float(tpg_ship.generator_turbine_radius)],
+            "T_generator_pillar_width": [float(tpg_ship.generator_pillar_width)],
+            "T_generator_rated_output[GW]": [
+                float(tpg_ship.generator_rated_output_w / 10**9)
+            ],
+            # "T_generator_efficiency": [float(tpg_ship.generator_efficiency)],
+            # "T_generator_drag_coefficient": [float(tpg_ship.generator_drag_coefficient)],
+            # "T_generator_pillar_chord": [float(tpg_ship.generator_pillar_chord)],
+            # "T_generator_pillar_max_tickness": [float(tpg_ship.generator_pillar_max_tickness)],
+            "T_generating_speed[kt]": [float(tpg_ship.generating_speed_kt)],
+            "T_tpgship_return_speed[kt]": [float(tpg_ship.nomal_ave_speed)],
+            "T_forecast_weight": [float(tpg_ship.forecast_weight)],
             "govia_base_judge_energy_storage_per": [
-                tpg_ship.govia_base_judge_energy_storage_per
+                float(tpg_ship.govia_base_judge_energy_storage_per)
             ],
-            "T_judge_time_times": [tpg_ship.judge_time_times],
-            "T_operational_reserve_percentage": tpg_ship.operational_reserve_percentage,
-            "T_standby_lat": [tpg_ship.standby_lat],
-            "T_standby_lon": [tpg_ship.standby_lon],
-            # "typhoon_effective_range": [tpg_ship.typhoon_effective_range],
-            ## シミュレーション結果関連
-            "T_total_gene_elect(mch)[GWh]": tpg_ship.total_gene_elect_list[-1] / 10**9,
-            "T_total_loss_elect[GWh]": tpg_ship.total_loss_elect_list[-1] / 10**9,
-            "T_sum_supply_elect[GWh]": tpg_ship.sum_supply_elect_list[-1] / 10**9,
-            "T_minus_storage_penalty": tpg_ship.minus_storage_penalty_list[-1],
-            # Storage base (列名の先頭にSt_を付与。探索しないものはコメントアウト)
-            "St_base_type": [st_base.base_type],
-            "St_lat": [st_base.locate[0]],
-            "St_lon": [st_base.locate[1]],
-            "St_max_storage[GWh]": [st_base.max_storage / 10**9],
-            "St_call_per": [st_base.call_per],
-            "St_total_supply[GWh]": [st_base.total_quantity_received_list[-1] / 10**9],
-            # Supply base (列名の先頭にSp_を付与。探索しないものはコメントアウト)
-            "Sp_base_type": [sp_base.base_type],
-            "Sp_lat": [sp_base.locate[0]],
-            "Sp_lon": [sp_base.locate[1]],
-            "Sp_max_storage[GWh]": [sp_base.max_storage / 10**9],
-            # "Sp_call_per": [sp_base.call_per],
-            "Sp_total_supply[GWh]": [sp_base.total_supply_list[-1] / 10**9],
-            # Support ship 1 (列名の先頭にSs1_を付与。探索しないものはコメントアウト)
-            "Ss1_max_storage[GWh]": [support_ship_1.max_storage / 10**9],
-            "Ss1_ship_speed[kt]": [support_ship_1.support_ship_speed],
-            "Ss1_EP_max_storage[GWh]": [support_ship_1.EP_max_storage / 10**9],
+            "T_judge_time_times": [float(tpg_ship.judge_time_times)],
+            "T_operational_reserve_percentage": [
+                int(tpg_ship.operational_reserve_percentage)
+            ],
+            "T_standby_lat": [float(tpg_ship.standby_lat)],
+            "T_standby_lon": [float(tpg_ship.standby_lon)],
+            # "T_typhoon_effective_range[km]": [int(tpg_ship.typhoon_effective_range)],
+            "T_total_gene_elect(mch)[GWh]": [
+                float(tpg_ship.total_gene_elect_list[-1] / 10**9)
+            ],
+            "T_total_loss_elect[GWh]": [
+                float(tpg_ship.total_loss_elect_list[-1] / 10**9)
+            ],
+            "T_sum_supply_elect[GWh]": [
+                float(tpg_ship.sum_supply_elect_list[-1] / 10**9)
+            ],
+            "T_minus_storage_penalty": [int(tpg_ship.minus_storage_penalty_list[-1])],
+            # 貯蔵拠点 (列名の先頭にSt_を付与。探索しないものはコメントアウト)
+            "St_base_type": [int(st_base.base_type)],  # Int64 型の例
+            "St_lat": [float(st_base.locate[0])],
+            "St_lon": [float(st_base.locate[1])],
+            "St_max_storage[GWh]": [float(st_base.max_storage / 10**9)],
+            "St_call_per": [float(st_base.call_per)],
+            "St_total_supply[GWh]": [
+                float(st_base.total_quantity_received_list[-1] / 10**9)
+            ],
+            # 供給拠点 (列名の先頭にSp_を付与。探索しないものはコメントアウト)
+            "Sp_base_type": [int(sp_base.base_type)],  # Int64 型の例
+            "Sp_lat": [float(sp_base.locate[0])],
+            "Sp_lon": [float(sp_base.locate[1])],
+            "Sp_max_storage[GWh]": [float(sp_base.max_storage / 10**9)],
+            "Sp_total_supply[GWh]": [float(sp_base.total_supply_list[-1] / 10**9)],
+            # 輸送船1 (列名の先頭にSs1_を付与。探索しないものはコメントアウト)
+            "Ss1_max_storage[GWh]": [float(support_ship_1.max_storage / 10**9)],
+            "Ss1_ship_speed[kt]": [int(support_ship_1.support_ship_speed)],
+            "Ss1_EP_max_storage[GWh]": [float(support_ship_1.EP_max_storage / 10**9)],
             "Ss1_Total_consumption_elect[GWh]": [
-                support_ship_1.sp_total_consumption_elect_list[-1] / 10**9
+                float(support_ship_1.sp_total_consumption_elect_list[-1] / 10**9)
             ],
             "Ss1_Total_received_elect[GWh]": [
-                support_ship_1.sp_total_received_elect_list[-1] / 10**9
+                float(support_ship_1.sp_total_received_elect_list[-1] / 10**9)
             ],
-            # Support ship 2 (列名の先頭にSs2_を付与。探索しないものはコメントアウト)
-            "Ss2_max_storage[GWh]": [support_ship_2.max_storage / 10**9],
-            "Ss2_ship_speed[kt]": [support_ship_2.support_ship_speed],
-            "Ss2_EP_max_storage[GWh]": [support_ship_2.EP_max_storage / 10**9],
+            # 輸送船2 (列名の先頭にSs2_を付与。探索しないものはコメントアウト)
+            "Ss2_max_storage[GWh]": [float(support_ship_2.max_storage / 10**9)],
+            "Ss2_ship_speed[kt]": [int(support_ship_2.support_ship_speed)],
+            "Ss2_EP_max_storage[GWh]": [float(support_ship_2.EP_max_storage / 10**9)],
             "Ss2_Total_consumption_elect[GWh]": [
-                support_ship_2.sp_total_consumption_elect_list[-1] / 10**9
+                float(support_ship_2.sp_total_consumption_elect_list[-1] / 10**9)
             ],
             "Ss2_Total_received_elect[GWh]": [
-                support_ship_2.sp_total_received_elect_list[-1] / 10**9
+                float(support_ship_2.sp_total_received_elect_list[-1] / 10**9)
             ],
-            # コスト関連
-            "T_total_cost[100M JPY]": [tpg_ship_total_cost],
-            "St_total_cost[100M JPY]": [st_base_total_cost],
-            "Sp_total_cost[100M JPY]": [sp_base_total_cost],
-            "Ss1_total_cost[100M JPY]": [support_ship_1_total_cost],
-            "Ss2_total_cost[100M JPY]": [support_ship_2_total_cost],
-            "Total_cost[100M JPY]": [total_cost],
-            "Total_profit[100M JPY]": [total_profit],
+            "T_total_cost[100M JPY]": [float(tpg_ship_total_cost)],
+            "St_total_cost[100M JPY]": [float(st_base_total_cost)],
+            "Sp_total_cost[100M JPY]": [float(sp_base_total_cost)],
+            "Ss1_total_cost[100M JPY]": [float(support_ship_1_total_cost)],
+            "Ss2_total_cost[100M JPY]": [float(support_ship_2_total_cost)],
+            "Total_cost[100M JPY]": [float(total_cost)],
+            "Total_profit[100M JPY]": [float(total_profit)],
         }
     )
 

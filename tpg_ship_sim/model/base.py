@@ -286,9 +286,7 @@ class Base:
                     self.locate, year, current_time, time_step
                 )
 
-            judge = self.max_storage * (
-                support_ship_1.max_storage * (self.call_per / 100)
-            )
+            judge = support_ship_1.max_storage * (self.call_per / 100)
             if self.storage >= judge:
                 self.stbase_supply_elect(
                     support_ship_1, support_ship_2, year, current_time, time_step
