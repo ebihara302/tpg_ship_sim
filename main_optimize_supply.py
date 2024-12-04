@@ -698,11 +698,13 @@ def run_simulation(cfg):
     # 総利益[億円]
     total_profit = sp_base.profit
 
+    total_pure_cost = total_cost - total_profit
+
     # 供給拠点に輸送された電力量を取得 total_costはパラメータの過剰化防止
     objective_value = (
         sp_base.total_supply / (10**9)
         - tpg_ship_1.minus_storage_penalty_list[-1]
-        - total_cost / 100
+        - total_pure_cost / 100
     )
 
     # 結果をデータフレームに出力
