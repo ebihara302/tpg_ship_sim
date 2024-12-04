@@ -905,7 +905,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 1000
+    trial_num = 3000
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )
