@@ -171,5 +171,7 @@ cython_debug/
 #.idea/
 # User-specific files
 research_programs/*
+!research_programs/.gitkeep
 data/typhoon_path/cluster_center_trajectories/*
 experiences/*
+!experiences/.gitkeep
