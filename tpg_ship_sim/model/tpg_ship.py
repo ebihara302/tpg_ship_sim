@@ -80,6 +80,11 @@ class TPG_ship:
     #############################################################################
     """
 
+    # コスト関連
+    building_cost = 0
+    maintenance_cost = 0
+    toluene_cost = 0
+
     ####################################  パラメータ  ######################################
 
     def __init__(
@@ -2888,3 +2893,58 @@ class TPG_ship:
         # 目標地点との距離
         target_position = (self.target_lat, self.target_lon)
         self.target_distance = self.get_distance(target_position)
+
+    def cost_calculate(self):
+        """
+        ############################ def cost_calculate ############################
+
+        [ 説明 ]
+
+        台風発電船のコストを計算する関数です。
+
+        修論(2025)に沿った設定となっています。
+
+        ##############################################################################
+        """
+
+        # 船体価格+甲板補強価格[円]
+        hull_cost = (
+            0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+            + 500000 * self.hull_L_oa * self.hull_B
+        )
+        # 硬翼帆価格[円]
+        wing_sail_cost = ((0.0004444 * self.sail_area + 0.5556) * self.sail_num) * 10**8
+        # 水中発電機の価格[円]
+        underwater_turbine_cost = (
+            (0.82 * self.generator_turbine_radius - 3.9) * 10**8 * self.generator_num
+        )
+        # MCH関連プラントの価格[円]
+        MCH_plant_cost = 5.0 * 10**9
+        # 電動機モーターの価格[円]　船体価格の10%
+        motor_cost = 0.1 * hull_cost
+        # バッテリーの価格[円] 75ドル/kWhで1ドル=160円 240MWhの電池を必要分搭載するとする。
+        n_battery = math.ceil(
+            (self.electric_propulsion_max_storage_wh / 10**6) / 240
+        )  # バッテリーの個数を端数切り上げで求める
+        battery_cost = (240 * 10**3 * 75) * n_battery * 160
+        # 初期電気推進機用電力の供給料金[円]25円/kWhとする。
+        initial_electric_propulsion_cost = 25 * (
+            self.electric_propulsion_max_storage_wh / 1000
+        )
+
+        # 船の建造費用[億円]
+        self.building_cost = (
+            hull_cost
+            + wing_sail_cost
+            + underwater_turbine_cost
+            + MCH_plant_cost
+            + motor_cost
+            + battery_cost
+            + initial_electric_propulsion_cost
+        ) / 10**8
+
+        # 船の維持費用[億円] 年間で建造コストの3％とする
+        self.maintenance_cost = self.building_cost * 0.03
+
+        # トルエンのコスト[億円] 1トンあたりの価格が1500ドルとし、1ドル=160円とする。self.max_storageは1GWhあたり379トンとし、self.max_storageの3倍量を確保する
+        self.toluene_cost = 1500 * ((self.max_storage / 10**9) * 379) * 3 * 160 / 10**8

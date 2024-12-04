@@ -172,3 +172,4 @@ cython_debug/
 # User-specific files
 research_programs/
 data/typhoon_path/cluster_center_trajectories/
+experiences/

@@ -1,3 +1,5 @@
+import math
+
 import polars as pl
 
 
@@ -49,6 +51,11 @@ class Base:
     brance_condition = "Ready"
     total_quantity_received = 0
     total_supply = 0
+
+    # コスト関連　単位は億円
+    building_cost = 0
+    maintenance_cost = 0
+    profit = 0
 
     def __init__(self, base_type, locate, max_storage, call_per) -> None:
         self.base_type = base_type
@@ -163,9 +170,11 @@ class Base:
                 self.call_ship1 = 0
                 if self.storage <= support_ship_1.max_storage:
                     support_ship_1.storage = support_ship_1.storage + self.storage
+                    self.total_supply = self.total_supply + self.storage
                     self.storage = 0
                 else:
                     support_ship_1.storage = support_ship_1.max_storage
+                    self.total_supply = self.total_supply + support_ship_1.max_storage
                     self.storage = self.storage - support_ship_1.max_storage
 
                 self.call_num = self.call_num + 1
@@ -183,9 +192,11 @@ class Base:
                 self.call_ship2 = 0
                 if self.storage <= support_ship_2.max_storage:
                     support_ship_2.storage = support_ship_2.storage + self.storage
+                    self.total_supply = self.total_supply + self.storage
                     self.storage = 0
                 else:
                     support_ship_2.storage = support_ship_2.max_storage
+                    self.total_supply = self.total_supply + support_ship_2.max_storage
                     self.storage = self.storage - support_ship_2.max_storage
 
                 self.call_num = self.call_num + 1
@@ -204,17 +215,26 @@ class Base:
 
         """
 
-        self.storage = self.storage + support_ship_1.storage + support_ship_2.storage
-        self.total_quantity_received = (
-            self.total_quantity_received
-            + support_ship_1.storage
-            + support_ship_2.storage
-        )
+        # 補助船の位置
+        sp_ship_1_position = [support_ship_1.ship_lat, support_ship_1.ship_lon]
+        sp_ship_2_position = [support_ship_2.ship_lat, support_ship_2.ship_lon]
 
-        if support_ship_1.storage > 0:
+        # 補助船の位置が拠点に到着したら、補助船の貯蔵量を0にする
+        # 拠点位置と補助船の位置が等しく、補助船のストレージが0より大きい場合、補助船のストレージを0にする
+        if self.locate == sp_ship_1_position and support_ship_1.storage > 0:
+            self.storage = self.storage + support_ship_1.storage
+            self.total_quantity_received = (
+                self.total_quantity_received + support_ship_1.storage
+            )
+
             support_ship_1.storage = 0
 
-        if support_ship_2.storage > 0:
+        if self.locate == sp_ship_2_position and support_ship_2.storage > 0:
+            self.storage = self.storage + support_ship_2.storage
+            self.total_quantity_received = (
+                self.total_quantity_received + support_ship_2.storage
+            )
+
             support_ship_2.storage = 0
 
     def spbase_supply_elect(self):
@@ -266,7 +286,9 @@ class Base:
                     self.locate, year, current_time, time_step
                 )
 
-            judge = support_ship_1.max_storage * (self.call_per / 100)
+            judge = self.max_storage * (
+                support_ship_1.max_storage * (self.call_per / 100)
+            )
             if self.storage >= judge:
                 self.stbase_supply_elect(
                     support_ship_1, support_ship_2, year, current_time, time_step
@@ -305,3 +327,42 @@ class Base:
                 else:
                     self.supply_time_count = self.supply_time_count + 1
                     self.brance_condition = "cbbase Storage"
+
+    def cost_calculate(self):
+        """
+        ############################ def cost_calculate ############################
+
+        [ 説明 ]
+
+        拠点のコストを計算する関数です。
+
+        修論(2025)に沿った設定となっています。
+
+        """
+
+        # 10万トン貯蔵できるタンクのコストを10億円とする
+        tank_cost = 10**9
+        tank_capacity = 10**5
+        # MCHを1GWh分で379tとして、10万トンタンクがいくつ必要か計算する、端数は切り上げ
+        need_capacity = (self.max_storage / 10**9) * 379
+        tank_num = math.ceil(need_capacity / tank_capacity)
+        # タンクのコストを計算
+        tank_total_cost = tank_cost * tank_num
+        # 入港できるようにするための拡張工事コスト(ドックも含む)を50億円とする
+        extension_cost = 5 * 10**9
+        # 建設コストを計算
+        self.building_cost = (tank_total_cost + extension_cost) / 10**8
+
+        # メンテナンスコストを計算。年間で建設コストの3％とする
+        self.maintenance_cost = self.building_cost * 0.03
+
+        # total_supply_list[-1]を基に利益を計算（供給拠点・兼用拠点の場合のみ計算）
+        if self.base_type == 2 or self.base_type == 3:
+            # MCHをWhからtに変換　1GWh = 379t
+            total_supply_t = self.total_supply_list[-1] / 10**9 * 379
+            # MCHの価格を1tあたり水素を679[Nm3]生成するとして、量を計算
+            total_supply_hydrogen = total_supply_t * 679
+            # 水素の価格を1[Nm3]あたり20円として、利益を計算
+            self.profit = total_supply_hydrogen * 20
+        else:
+            self.profit = 0

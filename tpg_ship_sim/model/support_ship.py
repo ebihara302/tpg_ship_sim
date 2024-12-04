@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import polars as pl
 from geopy.distance import geodesic
@@ -46,6 +48,7 @@ class Support_ship:
     supply_elect = 0
     arrived_supplybase = 1
     arrived_storagebase = 0
+    stay_time = 0
 
     tank_method = 2  # MCH
     batttery_method = 1  # ELECT
@@ -56,6 +59,11 @@ class Support_ship:
 
     total_consumption_elect = 0
     total_received_elect = 0
+
+    # コスト関係　単位は億円
+    building_cost = 0
+    maintenance_cost = 0
+    transportation_cost = 0
 
     def __init__(
         self,
@@ -448,7 +456,7 @@ class Support_ship:
 
         [ 説明 ]
 
-        UUVが拠点に帰港する場合の基本的な行動をまとめた関数です。
+        補助船が拠点に帰港する場合の基本的な行動をまとめた関数です。
 
         行っていることは、目的地の設定、行動の記録、船速の決定、到着の判断です。
 
@@ -467,14 +475,33 @@ class Support_ship:
         self.target_lat = storage_base_position[0]
         self.target_lon = storage_base_position[1]
 
-        storagebase_ship_dis_time = self.get_distance(
-            storage_base_position
-        ) / self.change_kt_kmh(self.speed_kt)
+        distance = self.get_distance(storage_base_position)
+        storagebase_ship_dis_time = distance / self.change_kt_kmh(self.speed_kt)
         self.arrived_storagebase = 0
         self.arrived_supplybase = 0
 
+        # 消費電力の計算
+        consumption_elect = (
+            self.cal_maxspeedpower(
+                self.speed_kt,
+                self.max_storage,
+                self.tank_method,
+                self.EP_max_storage,
+                self.batttery_method,
+            )
+            / self.elect_trust_efficiency
+        ) * (
+            distance / self.change_kt_kmh(self.support_ship_speed)
+        )  # 移動距離に対する消費電力の計算
+        self.total_consumption_elect = (
+            self.total_consumption_elect + consumption_elect
+        )  # Totalの消費電力の記録
+        self.EP_storage = (
+            self.EP_storage - consumption_elect
+        )  # バッテリー容量から消費電力を引く
+
         # timestep後にUUVに船がついている場合
-        if storagebase_ship_dis_time <= time_step:
+        if (storagebase_ship_dis_time <= time_step) and (self.stay_time > 0):
             self.brance_condition = "arrival at storage Base"
             self.arrived_storagebase = 1  # 到着のフラグ
             self.arrived_supplybase = 0
@@ -482,6 +509,13 @@ class Support_ship:
             self.ship_lon = storage_base_position[1]
 
             self.speed_kt = 0
+
+            self.stay_time = 0
+
+        elif (storagebase_ship_dis_time <= time_step) and (self.stay_time == 0):
+            self.brance_condition = "go to storage Base(stay)"
+            self.arrived_storagebase = 0
+            self.stay_time = self.stay_time + 1
 
         else:
             self.brance_condition = "go to storage Base"
@@ -511,13 +545,32 @@ class Support_ship:
         self.target_lat = self.supplybase_lat
         self.target_lon = self.supplybase_lon
         supplybase_position = (self.supplybase_lat, self.supplybase_lon)
-        uuv_ship_dis_time = self.get_distance(supplybase_position) / self.change_kt_kmh(
-            self.speed_kt
-        )
+        distance = self.get_distance(supplybase_position)
+        uuv_ship_dis_time = distance / self.change_kt_kmh(self.speed_kt)
         self.arrived_supplybase = 0
 
+        # 消費電力の計算
+        consumption_elect = (
+            self.cal_maxspeedpower(
+                self.speed_kt,
+                self.storage,
+                self.tank_method,
+                self.EP_max_storage,
+                self.batttery_method,
+            )
+            / self.elect_trust_efficiency
+        ) * (
+            distance / self.change_kt_kmh(self.support_ship_speed)
+        )  # 移動距離に対する消費電力の計算
+        self.total_consumption_elect = (
+            self.total_consumption_elect + consumption_elect
+        )  # Totalの消費電力の記録
+        self.EP_storage = (
+            self.EP_storage - consumption_elect
+        )  # バッテリー容量から消費電力を引く
+
         # timestep後にBaseに船がついている場合
-        if uuv_ship_dis_time <= time_step:
+        if (uuv_ship_dis_time <= time_step) and (self.stay_time > 0):
             self.brance_condition = "arrival at supply Base"
             self.ship_gene = 0
             self.arrived_supplybase = 1  # 到着のフラグ
@@ -528,9 +581,20 @@ class Support_ship:
             self.target_lon = np.nan
             self.target_distance = np.nan
             self.supply_elect = self.storage
-            self.storage = 0
+            self.total_received_elect = self.total_received_elect + (
+                self.EP_max_storage - self.EP_storage
+            )
+            self.EP_storage = self.EP_max_storage
+            # self.storage = 0
 
             self.speed_kt = 0
+            self.stay_time = 0
+
+        elif (uuv_ship_dis_time <= time_step) and (self.stay_time == 0):
+            self.brance_condition = "go to supply Base(stay)"
+            self.arrived_supplybase = 0
+            self.supply_elect = 0
+            self.stay_time = self.stay_time + 1
 
         else:
             self.brance_condition = "go to supply Base"
@@ -566,20 +630,20 @@ class Support_ship:
         # 船の座標が変わった場合のみ消費電力を計算する
         if position_after != position_before:
             # 現在位置と次の位置の距離を計算して、船速を用いて航行時間を計算して消費電力を計算する
-            distance = geodesic(position_before, position_after).km
-            consumption_elect = (
-                self.cal_maxspeedpower(
-                    self.speed_kt,
-                    self.storage,
-                    self.tank_method,
-                    self.EP_max_storage,
-                    self.batttery_method,
-                )
-                / self.elect_trust_efficiency
-            ) * (distance / self.change_kt_kmh(self.support_ship_speed))
-            self.total_consumption_elect += consumption_elect
-            self.EP_storage -= consumption_elect
-            self.total_received_elect += 0
+            # distance = geodesic(position_before, position_after).km
+            # consumption_elect = (
+            #     self.cal_maxspeedpower(
+            #         self.speed_kt,
+            #         self.storage,
+            #         self.tank_method,
+            #         self.EP_max_storage,
+            #         self.batttery_method,
+            #     )
+            #     / self.elect_trust_efficiency
+            # ) * (distance / self.change_kt_kmh(self.support_ship_speed))
+            # self.total_consumption_elect = self.total_consumption_elect + consumption_elect
+            # self.EP_storage = self.EP_storage - consumption_elect
+            self.total_received_elect = self.total_received_elect
 
         else:
             if self.EP_storage < self.EP_max_storage:
@@ -590,3 +654,114 @@ class Support_ship:
             else:
                 self.total_received_elect += 0
                 self.total_consumption_elect += 0
+
+    def calculate_hull_size(self):
+        """
+        ############################ def calculate_hull_size ############################
+
+        [ 説明 ]
+
+        船体の寸法を算出する関数です。
+
+        ##############################################################################
+
+        戻り値 :
+            hull_L_oa (float) : 船体の全長
+            hull_B (float) : 船体の幅
+
+        #############################################################################
+        """
+        # 甲板面積を計算
+        # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
+
+        # DWTの記録
+        main_storage_dwt = self.cal_dwt(self.tank_method, self.max_storage)
+        electric_propulsion_storage_dwt = self.cal_dwt(
+            self.batttery_method, self.EP_max_storage
+        )
+
+        self.main_storage_weight = main_storage_dwt
+        self.ep_storage_weight = electric_propulsion_storage_dwt
+
+        sum_dwt_t = main_storage_dwt + electric_propulsion_storage_dwt
+        self.ship_dwt = sum_dwt_t
+
+        total_ship_weight = sum_dwt_t
+
+        # 船体の寸法を計算
+        if self.tank_method == 1:  # 電気貯蔵 = バルカー型
+            if total_ship_weight < 220000:
+                L_oa = 7.9387 * (total_ship_weight**0.2996)
+                B = 1.4257 * (total_ship_weight**0.2883)
+
+            elif 220000 <= total_ship_weight < 330000:
+                L_oa = 139.3148 * (total_ship_weight**0.069)
+                B = 13.8365 * (total_ship_weight**0.1127)
+
+            else:
+                L_oa = 361.2
+                B = 65.0
+
+        elif self.tank_method == 2:  # 水素貯蔵 = タンカー型
+            if total_ship_weight < 20000:
+                L_oa = 5.4061 * (total_ship_weight**0.3500)
+                B = 1.4070 * (total_ship_weight**0.2864)
+
+            elif 20000 <= total_ship_weight < 280000:
+                L_oa = 10.8063 * (total_ship_weight**0.2713)
+                if total_ship_weight < 40000:
+                    B = 1.4070 * (total_ship_weight**0.2864)
+                elif 40000 <= total_ship_weight < 80000:
+                    B = 32.9
+                elif 80000 <= total_ship_weight < 120000:
+                    B = 43.5
+                elif 120000 <= total_ship_weight < 200000:
+                    B = 48.9
+                else:
+                    B = 60.2
+
+            else:
+                L_oa = 333.7
+                B = 60.2
+
+        # L_oa,Bの記録
+        self.hull_L_oa = L_oa
+        self.hull_B = B
+
+    def cost_calculate(self):
+        """
+        ############################ def cost_calculate ############################
+
+        [ 説明 ]
+
+        補助船のコストを計算する関数です。
+
+        修論(2025)に沿った設定となっています。
+
+        ##############################################################################
+        """
+
+        # 船の建造費用
+        # 船長と船幅を計算
+        self.calculate_hull_size()
+        # 船体価格[円]
+        hull_cost = 0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+        # 電動機モーターの価格[円]　船体価格の10%
+        motor_cost = 0.1 * hull_cost
+        # バッテリーの価格[円] 75ドル/kWhで1ドル=160円 240MWhの電池を必要分搭載するとする。
+        n_battery = math.ceil(
+            (self.EP_max_storage / 10**6) / 240
+        )  # バッテリーの個数を端数切り上げで求める
+        battery_cost = (240 * 10**3 * 75) * n_battery * 160
+
+        # 船の建造費用[億円]
+        self.building_cost = (hull_cost + motor_cost + battery_cost) / 10**8
+
+        # 船の維持費用[億円] 年間で建造コストの3％とする
+        self.maintenance_cost = self.building_cost * 0.03
+
+        # MCHの輸送コスト
+        # 輸送船の合計消費電力を用いて計算。25円/kWhとする。
+        self.transportation_cost = (
+            (self.sp_total_consumption_elect_list[-1] / 1000) * 25 / 10**8
+        )

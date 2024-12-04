@@ -1,5 +1,7 @@
 import csv
+import math
 import os
+from datetime import datetime, timedelta, timezone
 
 import hydra
 import optuna
@@ -278,13 +280,13 @@ def sp_ship_EP_storage_cal(
     # 消費エネルギーの見積もりとバッテリー容量の見積もりの差分
     if (total_consumption_elect - sp_ship_EP_storage) > 0:
         raise ValueError("バッテリー容量が足りません。入力値を確認してください。")
-    else:
-        print(
-            "バッテリー容量チェックOK",
-            total_consumption_elect * 1.2,
-            " and ",
-            sp_ship_EP_storage,
-        )
+    # else:
+    # print(
+    #     "バッテリー容量チェックOK",
+    #     total_consumption_elect * 1.2,
+    #     " and ",
+    #     sp_ship_EP_storage,
+    # )
 
     # sp_ship_EP_storageの値をMWhにした時に整数になるように切り上げ
     sp_ship_EP_storage = int(sp_ship_EP_storage / 10**6) * 10**6
@@ -292,7 +294,15 @@ def sp_ship_EP_storage_cal(
     return sp_ship_EP_storage
 
 
-def simulation_result_to_df(tpg_ship, st_base, sp_base, support_ship_1, support_ship_2):
+def simulation_result_to_df(
+    tpg_ship,
+    st_base,
+    sp_base,
+    support_ship_1,
+    support_ship_2,
+    simulation_start_time,
+    simulation_end_time,
+):
     """
     ############################ def simulation_result_to_df ############################
 
@@ -315,6 +325,59 @@ def simulation_result_to_df(tpg_ship, st_base, sp_base, support_ship_1, support_
 
     #############################################################################
     """
+    # コスト計算(損失)
+    # 運用年数　simulation_start_time、simulation_end_time (ex."2023-01-01 00:00:00")から年数を計算 365で割って端数切り上げ
+    operating_years = math.ceil(
+        (
+            datetime.strptime(simulation_end_time, "%Y-%m-%d %H:%M:%S")
+            - datetime.strptime(simulation_start_time, "%Y-%m-%d %H:%M:%S")
+        ).days
+        / 365
+    )
+
+    # 台風発電船関連[億円]
+    tpg_ship.cost_calculate()
+    tpg_ship_total_cost = (
+        tpg_ship.building_cost
+        + tpg_ship.toluene_cost
+        + tpg_ship.maintenance_cost * operating_years
+    )
+    # サポート船1関連[億円]
+    support_ship_1.cost_calculate()
+    support_ship_1_total_cost = (
+        support_ship_1.building_cost
+        + support_ship_1.maintenance_cost * operating_years
+        + support_ship_1.transportation_cost
+    )
+    # サポート船2関連[億円]
+    support_ship_2.cost_calculate()
+    support_ship_2_total_cost = (
+        support_ship_2.building_cost
+        + support_ship_2.maintenance_cost * operating_years
+        + support_ship_2.transportation_cost
+    )
+    # 貯蔵拠点関連[億円]
+    st_base.cost_calculate()
+    st_base_total_cost = (
+        st_base.building_cost + st_base.maintenance_cost * operating_years
+    )
+    # 供給拠点関連[億円]
+    sp_base.cost_calculate()
+    sp_base_total_cost = (
+        sp_base.building_cost + sp_base.maintenance_cost * operating_years
+    )
+
+    # 総コスト[億円]
+    total_cost = (
+        tpg_ship_total_cost
+        + support_ship_1_total_cost
+        + support_ship_2_total_cost
+        + st_base_total_cost
+        + sp_base_total_cost
+    )
+
+    # 総利益[億円]
+    total_profit = sp_base.profit
 
     data = pl.DataFrame(
         {
@@ -402,6 +465,14 @@ def simulation_result_to_df(tpg_ship, st_base, sp_base, support_ship_1, support_
             "Ss2_Total_received_elect[GWh]": [
                 support_ship_2.sp_total_received_elect_list[-1] / 10**9
             ],
+            # コスト関連
+            "T_total_cost[100M JPY]": [tpg_ship_total_cost],
+            "St_total_cost[100M JPY]": [st_base_total_cost],
+            "Sp_total_cost[100M JPY]": [sp_base_total_cost],
+            "Ss1_total_cost[100M JPY]": [support_ship_1_total_cost],
+            "Ss2_total_cost[100M JPY]": [support_ship_2_total_cost],
+            "Total_cost[100M JPY]": [total_cost],
+            "Total_profit[100M JPY]": [total_profit],
         }
     )
 
@@ -572,15 +643,81 @@ def run_simulation(cfg):
         output_folder_path,
     )
 
-    # 供給拠点に輸送された電力量を取得
-    print(sp_base.total_supply)
+    # # 供給拠点に輸送された電力量を取得
+    # print(sp_base.total_supply)
+    # objective_value = (
+    #     sp_base.total_supply / (10**9) - tpg_ship_1.minus_storage_penalty_list[-1]
+    # )
+
+    # コスト計算(損失)
+    # 運用年数　simulation_start_time、simulation_end_time (ex."2023-01-01 00:00:00")から年数を計算 365で割って端数切り上げ
+    operating_years = math.ceil(
+        (
+            datetime.strptime(simulation_end_time, "%Y-%m-%d %H:%M:%S")
+            - datetime.strptime(simulation_start_time, "%Y-%m-%d %H:%M:%S")
+        ).days
+        / 365
+    )
+    # print(f"運用年数: {operating_years}年")
+
+    # 台風発電船関連[億円]
+    tpg_ship_1.cost_calculate()
+    tpg_ship_total_cost = (
+        tpg_ship_1.building_cost
+        + tpg_ship_1.toluene_cost
+        + tpg_ship_1.maintenance_cost * operating_years
+    )
+    # サポート船1関連[億円]
+    support_ship_1.cost_calculate()
+    support_ship_1_total_cost = (
+        support_ship_1.building_cost
+        + support_ship_1.maintenance_cost * operating_years
+        + support_ship_1.transportation_cost
+    )
+    # サポート船2関連[億円]
+    support_ship_2.cost_calculate()
+    support_ship_2_total_cost = (
+        support_ship_2.building_cost
+        + support_ship_2.maintenance_cost * operating_years
+        + support_ship_2.transportation_cost
+    )
+    # 貯蔵拠点関連[億円]
+    st_base.cost_calculate()
+    st_base_total_cost = (
+        st_base.building_cost + st_base.maintenance_cost * operating_years
+    )
+    # 供給拠点関連[億円]
+    sp_base.cost_calculate()
+    sp_base_total_cost = (
+        sp_base.building_cost + sp_base.maintenance_cost * operating_years
+    )
+
+    # 総コスト[億円]
+    total_cost = (
+        tpg_ship_total_cost
+        + support_ship_1_total_cost
+        + support_ship_2_total_cost
+        + st_base_total_cost
+        + sp_base_total_cost
+    )
+
+    # 総利益[億円]
+    total_profit = sp_base.profit
+
+    # 利益強め
     objective_value = (
-        sp_base.total_supply / (10**9) - tpg_ship_1.minus_storage_penalty_list[-1]
+        total_profit - total_cost - tpg_ship_1.minus_storage_penalty_list[-1]
     )
 
     # 結果をデータフレームに出力
     data = simulation_result_to_df(
-        tpg_ship_1, st_base, sp_base, support_ship_1, support_ship_2
+        tpg_ship_1,
+        st_base,
+        sp_base,
+        support_ship_1,
+        support_ship_2,
+        simulation_start_time,
+        simulation_end_time,
     )
 
     # final_csv_pathの既存ファイルにdfを追記
@@ -657,15 +794,28 @@ def objective(trial):
     ############ Storage Baseのパラメータを指定 ############
 
     # 拠点位置に関する変更
-    stbase_lat = trial.suggest_int("stbase_lat", 0, 30)
-    stbase_lon = trial.suggest_int("stbase_lon", 134, 180)
-    config.storage_base.locate = [stbase_lat, stbase_lon]
-    config.tpg_ship.initial_position = config.storage_base.locate
-    # 貯蔵量に関する変更
-    stbase_max_storage_GWh = trial.suggest_int("stbase_max_storage_GWh", 50, 1500)
-    config.storage_base.max_storage_wh = stbase_max_storage_GWh * 1000000000
+    # stbase_lat = trial.suggest_int("stbase_lat", 0, 30)
+    # stbase_lon = trial.suggest_int("stbase_lon", 134, 180)
+    # config.storage_base.locate = [stbase_lat, stbase_lon]
+    # config.tpg_ship.initial_position = config.storage_base.locate
+    stbase_list = [
+        [24.47, 122.98],
+        [25.83, 131.23],
+        [24.78, 141.32],
+        [20.42, 136.08],  # 与那国島  # 南大東島  # 硫黄島
+        [24.29, 153.98],  # 沖ノ鳥島  # 南鳥島
+    ]
+    stbase_locate = trial.suggest_int("stbase_locate", 0, 4)
+    config.storage_base.locate = stbase_list[stbase_locate]
+    # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
+    stbase_max_storage_ton_100k = trial.suggest_int(
+        "stbase_max_storage_ton_100k", 1, 15
+    )
+    stbase_max_storage_ton = stbase_max_storage_ton_100k * 100000
+    config.storage_base.max_storage_wh = (stbase_max_storage_ton / 379) * 10**9
+
     # 輸送船呼び出しタイミングに関する変更
-    config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
+    # config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
 
     ############ Supply Baseのパラメータを指定 ############
 
@@ -680,9 +830,12 @@ def objective(trial):
     ]
     spbase_locate = trial.suggest_int("spbase_locate", 0, 4)
     config.supply_base.locate = spbase_list[spbase_locate]
-    # 貯蔵量に関する変更
-    spbase_max_storage_GWh = trial.suggest_int("spbase_max_storage_GWh", 50, 1500)
-    config.supply_base.max_storage_wh = spbase_max_storage_GWh * 1000000000
+    # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
+    spbase_max_storage_ton_100k = trial.suggest_int(
+        "spbase_max_storage_ton_100k", 1, 15
+    )
+    spbase_max_storage_ton = spbase_max_storage_ton_100k * 100000
+    config.supply_base.max_storage_wh = (spbase_max_storage_ton / 379) * 10**9
     # 輸送船呼び出しタイミングに関する変更(多分使うことはない)
     # config.supply_base.call_per = trial.suggest_int("spbase_call_per", 10, 100)
 
@@ -698,6 +851,15 @@ def objective(trial):
         "support_ship_1_ship_speed_kt", 1, 20
     )
     config.support_ship_1.ship_speed_kt = support_ship_1_ship_speed_kt
+    # # 電気推進効率に関する変更
+    # config.support_ship_1.elect_trust_efficiency = trial.suggest_float(
+    #     "support_ship_1_elect_trust_efficiency", 0.7, 0.9
+    # )
+    # # バッテリー容量に関する変更
+    # support_ship_1_EP_max_storage = trial.suggest_int(
+    #     "support_ship_1_EP_max_storage_GWh_10", 10, 1500
+    # )
+    # config.support_ship_1.EP_max_storage = support_ship_1_EP_max_storage * 10**8
 
     ############ Support Ship 2のパラメータを指定 ############
 
@@ -711,6 +873,15 @@ def objective(trial):
         "support_ship_2_ship_speed_kt", 1, 20
     )
     config.support_ship_2.ship_speed_kt = support_ship_2_ship_speed_kt
+    # # 電気推進効率に関する変更
+    # config.support_ship_2.elect_trust_efficiency = trial.suggest_float(
+    #     "support_ship_2_elect_trust_efficiency", 0.7, 0.9
+    # )
+    # # バッテリー容量に関する変更
+    # support_ship_2_EP_max_storage = trial.suggest_int(
+    #     "support_ship_2_EP_max_storage_GWh_10", 10, 1500
+    # )
+    # config.support_ship_2.EP_max_storage = support_ship_2_EP_max_storage * 10**8
 
     # シミュレーションを実行
     objective_value = run_simulation(config)
@@ -720,13 +891,10 @@ def objective(trial):
 
 @hydra.main(config_name="config", version_base=None, config_path="conf")
 def main(cfg: DictConfig) -> None:
-    # 結果保存用のCSVファイルを初期化
-    # output_folder_path = HydraConfig.get().run.dir
-    # models_param_log_file_name = cfg.output_env.model_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-    storage = "sqlite:///experiences/test_all_optimize_check.db"
+    storage = "sqlite:///experiences/catamaran_cost_optimize.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
@@ -735,72 +903,8 @@ def main(cfg: DictConfig) -> None:
         load_if_exists=True,
     )
 
-    # # 結果保存用のCSVファイルを初期化
-    # final_csv = output_folder_path + "/" + models_param_log_file_name
-
-    # # simulation_result_to_df関数で出力するデータフレームのスキーマを指定
-    # columns = [
-    #     ("T_max_storage[GWh]", pl.Float64),
-    #     ("T_EP_max_storage_wh[GWh]", pl.Float64),
-    #     ("T_sail_num", pl.Int64),
-    #     ("T_sail_area[m2]", pl.Float64),
-    #     ("T_sail_width[m]", pl.Float64),
-    #     ("T_sail_height[m]", pl.Float64),
-    #     ("T_sail_space", pl.Float64),
-    #     ("T_sail_steps", pl.Int64),
-    #     ("T_sail_weight", pl.Float64),
-    #     ("T_num_sails_per_row", pl.Int64),
-    #     ("T_num_sails_rows", pl.Int64),
-    #     ("T_sail_penalty", pl.Float64),
-    #     ("T_dwt[t]", pl.Float64),
-    #     ("T_hull_L_oa[m]", pl.Float64),
-    #     ("T_hull_B[m]", pl.Float64),
-    #     ("T_generator_num", pl.Int64),
-    #     ("T_generator_turbine_radius[m]", pl.Float64),
-    #     ("T_generator_pillar_width", pl.Float64),
-    #     ("T_generator_rated_output[GW]", pl.Float64),
-    #     ("T_generating_speed[kt]", pl.Float64),
-    #     ("T_tpgship_return_speed[kt]", pl.Float64),
-    #     ("T_forecast_weight", pl.Float64),
-    #     ("govia_base_judge_energy_storage_per", pl.Float64),
-    #     ("T_judge_time_times", pl.Float64),
-    #     ("T_operational_reserve_percentage", pl.Float64),
-    #     ("T_standby_lat", pl.Float64),
-    #     ("T_standby_lon", pl.Float64),
-    #     ("T_total_gene_elect(mch)[GWh]", pl.Float64),
-    #     ("T_total_loss_elect[GWh]", pl.Float64),
-    #     ("T_sum_supply_elect[GWh]", pl.Float64),
-    #     ("T_minus_storage_penalty", pl.Float64),
-    #     ("St_base_type", pl.String),
-    #     ("St_lat", pl.Float64),
-    #     ("St_lon", pl.Float64),
-    #     ("St_max_storage[GWh]", pl.Float64),
-    #     ("St_call_per", pl.Float64),
-    #     ("St_total_supply[GWh]", pl.Float64),
-    #     ("Sp_base_type", pl.String),
-    #     ("Sp_lat", pl.Float64),
-    #     ("Sp_lon", pl.Float64),
-    #     ("Sp_max_storage[GWh]", pl.Float64),
-    #     ("Sp_total_supply[GWh]", pl.Float64),
-    #     ("Ss1_max_storage[GWh]", pl.Float64),
-    #     ("Ss1_ship_speed[kt]", pl.Float64),
-    #     ("Ss1_EP_max_storage[GWh]", pl.Float64),
-    #     ("Ss1_Total_consumption_elect[GWh]", pl.Float64),
-    #     ("Ss1_Total_received_elect[GWh]", pl.Float64),
-    #     ("Ss2_max_storage[GWh]", pl.Float64),
-    #     ("Ss2_ship_speed[kt]", pl.Float64),
-    #     ("Ss2_EP_max_storage[GWh]", pl.Float64),
-    #     ("Ss2_Total_consumption_elect[GWh]", pl.Float64),
-    #     ("Ss2_Total_received_elect[GWh]", pl.Float64),
-    # ]
-
-    # # Create an empty DataFrame with the specified schema
-    # df = pl.DataFrame(schema=columns)
-
-    # df.write_csv(final_csv)
-
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 500
+    trial_num = 1000
     study.optimize(
         objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
     )

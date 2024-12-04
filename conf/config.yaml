@@ -44,7 +44,7 @@ storage_base:
   base_type: 1 # 1: 貯蔵拠点, 2: 供給拠点, 3: 兼用
   locate: [24.29,153.98] # 南鳥島[24.29, 153.98] # lat, lon
   max_storage_wh: 210000000000 # Wh
-  call_per: 60 # 呼び出す際の補助船の貯蔵量基準の割合[%]　ex) 60%の場合、補助船の貯蔵量の60%分の貯蔵量に拠点の貯蔵量がなったときに呼ぶ
+  call_per: 0.00001 # 呼び出す際の貯蔵拠点の貯蔵量基準の割合[%] 貯蔵量がsupport_shipのmax_storage_whのcall_per[%]以上の場合に呼び出す
 
 supply_base:
   base_type: 2 # 1: 貯蔵拠点, 2: 供給拠点, 3: 兼用
@@ -65,7 +65,7 @@ support_ship_1:
   elect_trust_efficiency: 0.83 # 電気推進機の効率
 
 support_ship_2:
-  max_storage_wh: 0 # Wh 0の場合は船の削除となる
+  max_storage_wh: 35000000000 # Wh 0の場合は船の削除となる
   ship_speed_kt: 5 # kt
   EP_max_storage_wh: 14200000000 # Wh
   elect_trust_efficiency: 0.83 # 電気推進機の効率
