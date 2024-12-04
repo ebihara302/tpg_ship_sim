@@ -361,6 +361,7 @@ class Base:
             # MCHの価格を1tあたり水素を679[Nm3]生成するとして、量を計算
             total_supply_hydrogen = total_supply_t * 679
             # 水素の価格を1[Nm3]あたり20円として、利益を計算
-            self.profit = total_supply_hydrogen * 20
+            self.profit = total_supply_hydrogen * 20  # 単位は円
+            self.profit = self.profit / 10**8  # 単位を億円に変換
         else:
             self.profit = 0
