@@ -381,9 +381,13 @@ def objective_value_calculation(
     # 総利益[億円]
     total_profit = sp_base.profit
 
-    # 利益強め
+    total_pure_cost = total_cost - total_profit
+
+    # 供給拠点に輸送された電力量を取得 total_costはパラメータの過剰化防止
     objective_value = (
-        total_profit - total_cost - tpg_ship.minus_storage_penalty_list[-1]
+        sp_base.total_supply / (10**9)
+        - tpg_ship.minus_storage_penalty_list[-1]
+        - total_pure_cost / 100
     )
 
     return objective_value
@@ -498,7 +502,7 @@ def simulation_result_to_df(
             "T_hull_L_oa[m]": [float(tpg_ship.hull_L_oa)],
             "T_hull_B[m]": [float(tpg_ship.hull_B)],
             # "T_elect_trust_efficiency": [float(tpg_ship.elect_trust_efficiency)],
-            # "T_MCH_to_elect_efficiency": [float(tpg_ship.MCH_to_elect_efficiency)],
+            "T_MCH_to_elect_efficiency": [float(tpg_ship.MCH_to_elect_efficiency)],
             # "T_elect_to_MCH_efficiency": [float(tpg_ship.elect_to_MCH_efficiency)],
             "T_generator_num": [int(tpg_ship.generator_num)],  # Int64 型の例
             "T_generator_turbine_radius[m]": [float(tpg_ship.generator_turbine_radius)],
@@ -864,15 +868,18 @@ def objective(trial):
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
-    EP_max_storage_GWh_10 = trial.suggest_int(
-        "tpgship_EP_max_storage_GWh_10", 5, 200
-    )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
-    config.tpg_ship.electric_propulsion_max_storage_wh = (
-        EP_max_storage_GWh_10 * 100000000
-    )
+    # EP_max_storage_GWh_10 = trial.suggest_int(
+    #     "tpgship_EP_max_storage_GWh_10", 5, 200
+    # )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
+    # config.tpg_ship.electric_propulsion_max_storage_wh = (
+    #     EP_max_storage_GWh_10 * 100000000
+    # )
+    config.tpg_ship.electric_propulsion_max_storage_wh = 0
 
     # config.tpg_ship.elect_trust_efficiency = trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
-    # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
+    config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float(
+        "tpgship_MCH_to_elect_efficiency", 0.4, 0.6
+    )
     # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
     sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 200)
@@ -927,7 +934,7 @@ def objective(trial):
     stbase_max_storage_ton = stbase_max_storage_ton_100k * 100000
     config.storage_base.max_storage_wh = (stbase_max_storage_ton / 379) * 10**9
 
-    # 輸送船呼び出しタイミングに関する変更
+    # # 輸送船呼び出しタイミングに関する変更
     # config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
 
     ############ Supply Baseのパラメータを指定 ############
@@ -1007,7 +1014,9 @@ def main(cfg: DictConfig) -> None:
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-    storage = "sqlite:///experiences/catamaran_cost_optimize.db"
+    storage = (
+        "sqlite:///experiences/catamaran_cost_optimization_plus_supply_electricity.db"
+    )
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",

@@ -294,6 +294,105 @@ def sp_ship_EP_storage_cal(
     return sp_ship_EP_storage
 
 
+def objective_value_calculation(
+    tpg_ship,
+    st_base,
+    sp_base,
+    support_ship_1,
+    support_ship_2,
+    simulation_start_time,
+    simulation_end_time,
+):
+    """
+    ############################ def objective_value_calculation ############################
+
+    [ 説明 ]
+
+    目的関数の値を算出する関数です。
+
+    適宜設定し直してください。
+
+    ##############################################################################
+
+    引数 :
+        tpg_ship (TPG_ship) : TPG ship
+        st_base (Base) : Storage base
+        sp_base (Base) : Supply base
+        support_ship_1 (Support_ship) : Support ship 1
+        support_ship_2 (Support_ship) : Support ship 2
+
+    戻り値 :
+        objective_value (float) : 目的関数の値
+
+    #############################################################################
+    """
+    # コスト計算(損失)
+    # 運用年数　simulation_start_time、simulation_end_time (ex."2023-01-01 00:00:00")から年数を計算 365で割って端数切り上げ
+    operating_years = math.ceil(
+        (
+            datetime.strptime(simulation_end_time, "%Y-%m-%d %H:%M:%S")
+            - datetime.strptime(simulation_start_time, "%Y-%m-%d %H:%M:%S")
+        ).days
+        / 365
+    )
+    # print(f"運用年数: {operating_years}年")
+
+    # 台風発電船関連[億円]
+    tpg_ship.cost_calculate()
+    tpg_ship_total_cost = (
+        tpg_ship.building_cost
+        + tpg_ship.toluene_cost
+        + tpg_ship.maintenance_cost * operating_years
+    )
+    # サポート船1関連[億円]
+    support_ship_1.cost_calculate()
+    support_ship_1_total_cost = (
+        support_ship_1.building_cost
+        + support_ship_1.maintenance_cost * operating_years
+        + support_ship_1.transportation_cost
+    )
+    # サポート船2関連[億円]
+    support_ship_2.cost_calculate()
+    support_ship_2_total_cost = (
+        support_ship_2.building_cost
+        + support_ship_2.maintenance_cost * operating_years
+        + support_ship_2.transportation_cost
+    )
+    # 貯蔵拠点関連[億円]
+    st_base.cost_calculate()
+    st_base_total_cost = (
+        st_base.building_cost + st_base.maintenance_cost * operating_years
+    )
+    # 供給拠点関連[億円]
+    sp_base.cost_calculate()
+    sp_base_total_cost = (
+        sp_base.building_cost + sp_base.maintenance_cost * operating_years
+    )
+
+    # 総コスト[億円]
+    total_cost = (
+        tpg_ship_total_cost
+        + support_ship_1_total_cost
+        + support_ship_2_total_cost
+        + st_base_total_cost
+        + sp_base_total_cost
+    )
+
+    # 総利益[億円]
+    total_profit = sp_base.profit
+
+    total_pure_cost = total_cost - total_profit
+
+    # 供給拠点に輸送された電力量を取得 total_costはパラメータの過剰化防止
+    objective_value = (
+        sp_base.total_supply / (10**9)
+        - tpg_ship.minus_storage_penalty_list[-1]
+        - total_pure_cost / 100
+    )
+
+    return objective_value
+
+
 def simulation_result_to_df(
     tpg_ship,
     st_base,
@@ -473,13 +572,79 @@ def simulation_result_to_df(
             "Ss2_Total_received_elect[GWh]": [
                 float(support_ship_2.sp_total_received_elect_list[-1] / 10**9)
             ],
+            # コスト関連
+            "T_hull_cost[100M JPY]": [float(tpg_ship.hull_cost / 10**8)],
+            "T_wing_sail_cost[100M JPY]": [float(tpg_ship.wing_sail_cost / 10**8)],
+            "T_underwater_turbine_cost[100M JPY]": [
+                float(tpg_ship.underwater_turbine_cost / 10**8)
+            ],
+            "T_battery_cost[100M JPY]": [float(tpg_ship.battery_cost / 10**8)],
+            "T_building_cost[100M JPY]": [float(tpg_ship.building_cost)],
+            "T_toluene_cost[100M JPY]": [float(tpg_ship.toluene_cost)],
+            "T_maintenance_cost[100M JPY]": [
+                float(tpg_ship.maintenance_cost * operating_years)
+            ],
             "T_total_cost[100M JPY]": [float(tpg_ship_total_cost)],
+            "St_building_cost[100M JPY]": [float(st_base.building_cost)],
+            "St_maintenance_cost[100M JPY]": [
+                float(st_base.maintenance_cost * operating_years)
+            ],
             "St_total_cost[100M JPY]": [float(st_base_total_cost)],
+            "Sp_building_cost[100M JPY]": [float(sp_base.building_cost)],
+            "Sp_maintenance_cost[100M JPY]": [
+                float(sp_base.maintenance_cost * operating_years)
+            ],
             "Sp_total_cost[100M JPY]": [float(sp_base_total_cost)],
+            "Ss1_building_cost[100M JPY]": [float(support_ship_1.building_cost)],
+            "Ss1_maintenance_cost[100M JPY]": [
+                float(support_ship_1.maintenance_cost * operating_years)
+            ],
+            "Ss1_transportation_cost[100M JPY]": [
+                float(support_ship_1.transportation_cost)
+            ],
             "Ss1_total_cost[100M JPY]": [float(support_ship_1_total_cost)],
+            "Ss2_building_cost[100M JPY]": [float(support_ship_2.building_cost)],
+            "Ss2_maintenance_cost[100M JPY]": [
+                float(support_ship_2.maintenance_cost * operating_years)
+            ],
+            "Ss2_transportation_cost[100M JPY]": [
+                float(support_ship_2.transportation_cost)
+            ],
             "Ss2_total_cost[100M JPY]": [float(support_ship_2_total_cost)],
+            "Total_maintain_cost_per_Year[100M JPY]": [
+                float(
+                    tpg_ship.maintenance_cost
+                    + st_base.maintenance_cost
+                    + sp_base.maintenance_cost
+                    + support_ship_1.maintenance_cost
+                    + support_ship_2.maintenance_cost
+                )
+            ],
+            "Total_fixed_cost[100M JPY]": [
+                float(
+                    tpg_ship.building_cost
+                    + tpg_ship.toluene_cost
+                    + st_base.building_cost
+                    + sp_base.building_cost
+                    + support_ship_1.building_cost
+                    + support_ship_2.building_cost
+                )
+            ],
             "Total_cost[100M JPY]": [float(total_cost)],
             "Total_profit[100M JPY]": [float(total_profit)],
+            "Objective_value": [
+                float(
+                    objective_value_calculation(
+                        tpg_ship,
+                        st_base,
+                        sp_base,
+                        support_ship_1,
+                        support_ship_2,
+                        simulation_start_time,
+                        simulation_end_time,
+                    )
+                )
+            ],
         }
     )
 
@@ -650,68 +815,15 @@ def run_simulation(cfg):
         output_folder_path,
     )
 
-    # コスト計算(損失)
-    # 運用年数　simulation_start_time、simulation_end_time (ex."2023-01-01 00:00:00")から年数を計算 365で割って端数切り上げ
-    operating_years = math.ceil(
-        (
-            datetime.strptime(simulation_end_time, "%Y-%m-%d %H:%M:%S")
-            - datetime.strptime(simulation_start_time, "%Y-%m-%d %H:%M:%S")
-        ).days
-        / 365
-    )
-    # print(f"運用年数: {operating_years}年")
-
-    # 台風発電船関連[億円]
-    tpg_ship_1.cost_calculate()
-    tpg_ship_total_cost = (
-        tpg_ship_1.building_cost
-        + tpg_ship_1.toluene_cost
-        + tpg_ship_1.maintenance_cost * operating_years
-    )
-    # サポート船1関連[億円]
-    support_ship_1.cost_calculate()
-    support_ship_1_total_cost = (
-        support_ship_1.building_cost
-        + support_ship_1.maintenance_cost * operating_years
-        + support_ship_1.transportation_cost
-    )
-    # サポート船2関連[億円]
-    support_ship_2.cost_calculate()
-    support_ship_2_total_cost = (
-        support_ship_2.building_cost
-        + support_ship_2.maintenance_cost * operating_years
-        + support_ship_2.transportation_cost
-    )
-    # 貯蔵拠点関連[億円]
-    st_base.cost_calculate()
-    st_base_total_cost = (
-        st_base.building_cost + st_base.maintenance_cost * operating_years
-    )
-    # 供給拠点関連[億円]
-    sp_base.cost_calculate()
-    sp_base_total_cost = (
-        sp_base.building_cost + sp_base.maintenance_cost * operating_years
-    )
-
-    # 総コスト[億円]
-    total_cost = (
-        tpg_ship_total_cost
-        + support_ship_1_total_cost
-        + support_ship_2_total_cost
-        + st_base_total_cost
-        + sp_base_total_cost
-    )
-
-    # 総利益[億円]
-    total_profit = sp_base.profit
-
-    total_pure_cost = total_cost - total_profit
-
-    # 供給拠点に輸送された電力量を取得 total_costはパラメータの過剰化防止
-    objective_value = (
-        sp_base.total_supply / (10**9)
-        - tpg_ship_1.minus_storage_penalty_list[-1]
-        - total_pure_cost / 100
+    # 目的関数の値を算出
+    objective_value = objective_value_calculation(
+        tpg_ship_1,
+        st_base,
+        sp_base,
+        support_ship_1,
+        support_ship_2,
+        simulation_start_time,
+        simulation_end_time,
     )
 
     # 結果をデータフレームに出力
