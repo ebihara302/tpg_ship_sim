@@ -1015,7 +1015,7 @@ def main(cfg: DictConfig) -> None:
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
     storage = (
-        "sqlite:///experiences/catamaran_cost_optimization_plus_supply_electricity.db"
+        "sqlite:///experiences/catamaran_cost_optimization_plus_supply_electricity_nonbattery.db"
     )
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
