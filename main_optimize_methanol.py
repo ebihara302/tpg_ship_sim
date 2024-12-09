@@ -1052,10 +1052,17 @@ def objective(trial):
     # config.tpg_ship.electric_propulsion_max_storage_wh = (
     #     EP_max_storage_GWh_10 * 100000000
     # )
+    config.tpg_ship.electric_propulsion_max_storage_wh = 0.0
 
-    # config.tpg_ship.trust_efficiency = 0.68 # trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
-    # config.tpg_ship.carrier_to_elect_efficiency = 1.0 # trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
-    # config.tpg_ship.elect_to_carrier_efficiency = 0.8 # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
+    config.tpg_ship.trust_efficiency = (
+        0.68  # trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
+    )
+    config.tpg_ship.carrier_to_elect_efficiency = (
+        1.0  # trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
+    )
+    config.tpg_ship.elect_to_carrier_efficiency = (
+        0.75  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
+    )
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
     sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 200)
     config.tpg_ship.sail_area = sail_area_100m2 * 100

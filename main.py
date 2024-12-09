@@ -35,9 +35,9 @@ def main(cfg: DictConfig) -> None:
     storage_method = cfg.tpg_ship.storage_method
     max_storage_wh = cfg.tpg_ship.max_storage_wh
     electric_propulsion_max_storage_wh = cfg.tpg_ship.electric_propulsion_max_storage_wh
-    elect_trust_efficiency = cfg.tpg_ship.elect_trust_efficiency
-    MCH_to_elect_efficiency = cfg.tpg_ship.MCH_to_elect_efficiency
-    elect_to_MCH_efficiency = cfg.tpg_ship.elect_to_MCH_efficiency
+    trust_efficiency = cfg.tpg_ship.trust_efficiency
+    carrier_to_elect_efficiency = cfg.tpg_ship.carrier_to_elect_efficiency
+    elect_to_carrier_efficiency = cfg.tpg_ship.elect_to_carrier_efficiency
     generator_turbine_radius = cfg.tpg_ship.generator_turbine_radius
     generator_efficiency = cfg.tpg_ship.generator_efficiency
     generator_drag_coefficient = cfg.tpg_ship.generator_drag_coefficient
@@ -66,9 +66,9 @@ def main(cfg: DictConfig) -> None:
         storage_method,
         max_storage_wh,
         electric_propulsion_max_storage_wh,
-        elect_trust_efficiency,
-        MCH_to_elect_efficiency,
-        elect_to_MCH_efficiency,
+        trust_efficiency,
+        carrier_to_elect_efficiency,
+        elect_to_carrier_efficiency,
         generator_turbine_radius,
         generator_efficiency,
         generator_drag_coefficient,
@@ -158,6 +158,19 @@ def main(cfg: DictConfig) -> None:
         output_folder_path + "/" + support_ship_2_log_file_name,
     )
     progress_bar.update(1)
+
+    # Tpg ship cost
+    print("tpg_ship_cost")
+    tpg_ship_1.cost_calculate()
+    print("DWT", tpg_ship_1.ship_dwt)
+    print(
+        tpg_ship_1.hull_cost,
+        tpg_ship_1.underwater_turbine_cost,
+        tpg_ship_1.wing_sail_cost,
+        tpg_ship_1.battery_cost,
+    )
+    print(tpg_ship_1.building_cost)
+    print(tpg_ship_1.maintenance_cost, tpg_ship_1.carrier_cost)
 
     utils.draw_map(
         typhoon_data_path,

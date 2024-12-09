@@ -46,19 +46,207 @@ def cal_dwt(storage_method, storage):
     #############################################################################
     """
     # 載貨重量トンを算出する。単位はt。
+    # storageの容量は中の物質を完全燃焼させた場合のエネルギー量として考える
 
     if storage_method == 1:  # 電気貯蔵
         # 重量エネルギー密度1000Wh/kgの電池を使うこととする。
         dwt = storage / 1000 / 1000
 
-    elif storage_method == 2:  # 水素貯蔵
+    elif storage_method == 2:  # MCH貯蔵
         # 有機ハイドライドで水素を貯蔵することとする。
         dwt = storage / 5000 * 0.0898 / 47.4
+
+    elif storage_method == 3:  # メタン貯蔵
+        # 物性より計算　メタン1molの完全燃焼で802kJ=802/3600kWh
+        # mol数の計算
+        mol = storage / ((802 / 3600) * 1000)
+        # メタンの分子量16.04g/molを用いてtに変換
+        dwt = mol * 16.04 / 10**6
+
+    elif storage_method == 4:  # メタノール貯蔵
+        # 物性より計算　メタノール1molの完全燃焼で726.2kJ=726.2/3600kWh
+        # mol数の計算
+        mol = storage / ((726.2 / 3600) * 1000)
+        # メタノールの分子量32.04g/molを用いてtに変換
+        dwt = mol * 32.04 / 10**6
+
+    elif storage_method == 5:  # e-ガソリン貯蔵
+        # 代表の分子としてC8H18（オクタン）を用いる
+        # オクタン1molの完全燃焼で5500kJ=5500/3600kWh
+        # mol数の計算
+        mol = storage / ((5500 / 3600) * 1000)
+        # オクタンの分子量114.23g/molを用いてtに変換
+        dwt = mol * 114.23 / 10**6
 
     else:
         print("cannot cal")
 
     return dwt
+
+
+# コンテナ型の船体寸法計算
+def calculate_LB_container(total_ship_weight_per_body):
+    """
+    ############################ def calculate_LB_container ############################
+
+    [ 説明 ]
+
+    コンテナ型の船体の寸法を算出する関数です。
+
+    船舶の主要諸元に関する解析(https://www.ysk.nilim.go.jp/kenkyuseika/pdf/ks0991.pdf)より計算を行います。
+
+    ##############################################################################
+
+    引数 :
+        total_ship_weight_per_body (float) : 1つの船体の載貨重量トン[t]
+
+    戻り値 :
+        L_oa (float) : 船体の全長
+        B (float) : 船体の幅
+
+    #############################################################################
+    """
+
+    if total_ship_weight_per_body < 35000:
+        L_oa = 6.0564 * (total_ship_weight_per_body**0.3398)
+        B = 1.4257 * (total_ship_weight_per_body**0.2883)
+
+    elif 35000 <= total_ship_weight_per_body < 45000:
+        L_oa = 228.3
+        B = 31.8
+
+    elif 45000 <= total_ship_weight_per_body < 55000:
+        L_oa = 268.8
+        B = 33.7
+
+    elif 55000 <= total_ship_weight_per_body < 65000:
+        L_oa = 284.5
+        B = 35.5
+
+    elif 65000 <= total_ship_weight_per_body < 75000:
+        L_oa = 291.0
+        B = 39.2
+
+    elif 75000 <= total_ship_weight_per_body < 85000:
+        L_oa = 304.8
+        B = 42.0
+
+    elif 85000 <= total_ship_weight_per_body < 95000:
+        L_oa = 310.9
+        B = 44.1
+
+    elif 95000 <= total_ship_weight_per_body < 105000:
+        L_oa = 338.0
+        B = 45.3
+
+    elif 105000 <= total_ship_weight_per_body < 135000:
+        L_oa = 343.1
+        if total_ship_weight_per_body < 115000:
+            B = 47.3
+        elif 115000 <= total_ship_weight_per_body < 125000:
+            B = 48.0
+        else:
+            B = 48.5
+
+    elif 135000 <= total_ship_weight_per_body < 155000:
+        L_oa = 367.5
+        if total_ship_weight_per_body < 145000:
+            B = 48.5
+        else:
+            B = 52.0
+
+    elif 155000 <= total_ship_weight_per_body < 175000:
+        L_oa = 378.3
+        B = 52.0
+
+    else:
+        L_oa = 399.7
+        B = 59.4
+
+    return L_oa, B
+
+
+# タンカー型の船体寸法計算
+def calculate_LB_tanker(total_ship_weight_per_body):
+    """
+    ############################ def calculate_LB_tanker ############################
+
+    [ 説明 ]
+
+    タンカー型の船体の寸法を算出する関数です。
+
+    船舶の主要諸元に関する解析(https://www.ysk.nilim.go.jp/kenkyuseika/pdf/ks0991.pdf)より計算を行います。
+
+    ##############################################################################
+
+    引数 :
+        total_ship_weight_per_body (float) : 1つの船体の載貨重量トン[t]
+
+    戻り値 :
+        L_oa (float) : 船体の全長
+        B (float) : 船体の幅
+
+    #############################################################################
+    """
+
+    if total_ship_weight_per_body < 20000:
+        L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
+        B = 1.4070 * (total_ship_weight_per_body**0.2864)
+
+    elif 20000 <= total_ship_weight_per_body < 280000:
+        L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
+        if total_ship_weight_per_body < 40000:
+            B = 1.4070 * (total_ship_weight_per_body**0.2864)
+        elif 40000 <= total_ship_weight_per_body < 80000:
+            B = 32.9
+        elif 80000 <= total_ship_weight_per_body < 120000:
+            B = 43.5
+        elif 120000 <= total_ship_weight_per_body < 200000:
+            B = 48.9
+        else:
+            B = 60.2
+
+    else:
+        L_oa = 333.7
+        B = 60.2
+
+    return L_oa, B
+
+
+# LNG船型の船体寸法計算
+def calculate_LB_lng(total_ship_weight_per_body):
+    """
+    ############################ def calculate_LB_lng ############################
+
+    [ 説明 ]
+
+    LNG船型の船体の寸法を算出する関数です。
+
+    船舶の主要諸元に関する解析(https://www.ysk.nilim.go.jp/kenkyuseika/pdf/ks0991.pdf)より計算を行います。
+
+    ##############################################################################
+
+    引数 :
+        total_ship_weight_per_body (float) : 1つの船体の載貨重量トン[t]
+
+    戻り値 :
+        L_oa (float) : 船体の全長
+        B (float) : 船体の幅
+
+    #############################################################################
+    """
+    # 横軸がGT（総トン数）で記載されていたので、DWTをGTに変換する。一般にDWTがGTの0.6〜0.8倍程度とのことを利用する。
+    GT = total_ship_weight_per_body / 0.7
+
+    # GTに対する船体の全長、船体の幅を算出
+    if GT < 150000:
+        L_oa = 6.1272 * (GT**0.3343)
+        B = 1.1239 * (GT**0.3204)
+    else:
+        L_oa = 345.2
+        B = 54.6
+
+    return L_oa, B
 
 
 def calculate_max_sail_num(
@@ -113,40 +301,17 @@ def calculate_max_sail_num(
 
         # 甲板面積を計算
         # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
-        if storage_method == 1:  # 電気貯蔵 = バルカー型
-            if total_ship_weight_per_body < 220000:
-                L_oa = 7.9387 * (total_ship_weight_per_body**0.2996)
-                B = 1.4257 * (total_ship_weight_per_body**0.2883)
+        # 船体の寸法を計算
+        if storage_method == 1:  # 電気貯蔵 = コンテナ型
+            L_oa, B = calculate_LB_container(total_ship_weight_per_body)
 
-            elif 220000 <= total_ship_weight_per_body < 330000:
-                L_oa = 139.3148 * (total_ship_weight_per_body**0.069)
-                B = 13.8365 * (total_ship_weight_per_body**0.1127)
+        elif (
+            (storage_method == 2) or (storage_method == 4) or (storage_method == 5)
+        ):  # MCH・メタノール・e-ガソリン貯蔵 = タンカー型
+            L_oa, B = calculate_LB_tanker(total_ship_weight_per_body)
 
-            else:
-                L_oa = 361.2
-                B = 65.0
-
-        elif storage_method == 2:  # 水素貯蔵 = タンカー型
-            if total_ship_weight_per_body < 20000:
-                L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
-                B = 1.4070 * (total_ship_weight_per_body**0.2864)
-
-            elif 20000 <= total_ship_weight_per_body < 280000:
-                L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
-                if total_ship_weight_per_body < 40000:
-                    B = 1.4070 * (total_ship_weight_per_body**0.2864)
-                elif 40000 <= total_ship_weight_per_body < 80000:
-                    B = 32.9
-                elif 80000 <= total_ship_weight_per_body < 120000:
-                    B = 43.5
-                elif 120000 <= total_ship_weight_per_body < 200000:
-                    B = 48.9
-                else:
-                    B = 60.2
-
-            else:
-                L_oa = 333.7
-                B = 60.2
+        elif storage_method == 3:  # メタン貯蔵 = LNG船型
+            L_oa, B = calculate_LB_lng(total_ship_weight_per_body)
 
         # 2. 計算した船の寸法から、甲板面積を算出
 
@@ -341,7 +506,7 @@ def objective_value_calculation(
     tpg_ship.cost_calculate()
     tpg_ship_total_cost = (
         tpg_ship.building_cost
-        + tpg_ship.toluene_cost
+        + tpg_ship.carrier_cost
         + tpg_ship.maintenance_cost * operating_years
     )
     # サポート船1関連[億円]
@@ -389,6 +554,11 @@ def objective_value_calculation(
         - tpg_ship.minus_storage_penalty_list[-1]
         - total_pure_cost / 100
     )
+
+    # # 利益強め
+    # objective_value = (
+    #     total_profit - total_cost - tpg_ship.minus_storage_penalty_list[-1]
+    # )
 
     return objective_value
 
@@ -438,7 +608,7 @@ def simulation_result_to_df(
     tpg_ship.cost_calculate()
     tpg_ship_total_cost = (
         tpg_ship.building_cost
-        + tpg_ship.toluene_cost
+        + tpg_ship.carrier_cost
         + tpg_ship.maintenance_cost * operating_years
     )
     # サポート船1関連[億円]
@@ -501,9 +671,13 @@ def simulation_result_to_df(
             "T_dwt[t]": [float(tpg_ship.ship_dwt)],
             "T_hull_L_oa[m]": [float(tpg_ship.hull_L_oa)],
             "T_hull_B[m]": [float(tpg_ship.hull_B)],
-            # "T_elect_trust_efficiency": [float(tpg_ship.elect_trust_efficiency)],
-            # "T_MCH_to_elect_efficiency": [float(tpg_ship.MCH_to_elect_efficiency)],
-            # "T_elect_to_MCH_efficiency": [float(tpg_ship.elect_to_MCH_efficiency)],
+            "T_trust_efficiency": [float(tpg_ship.trust_efficiency)],
+            "T_carrier_to_elect_efficiency": [
+                float(tpg_ship.carrier_to_elect_efficiency)
+            ],
+            "T_elect_to_carrier_efficiency": [
+                float(tpg_ship.elect_to_carrier_efficiency)
+            ],
             "T_generator_num": [int(tpg_ship.generator_num)],  # Int64 型の例
             "T_generator_turbine_radius[m]": [float(tpg_ship.generator_turbine_radius)],
             "T_generator_pillar_width": [float(tpg_ship.generator_pillar_width)],
@@ -517,7 +691,7 @@ def simulation_result_to_df(
             "T_generating_speed[kt]": [float(tpg_ship.generating_speed_kt)],
             "T_tpgship_return_speed[kt]": [float(tpg_ship.nomal_ave_speed)],
             "T_forecast_weight": [float(tpg_ship.forecast_weight)],
-            "govia_base_judge_energy_storage_per": [
+            "T_govia_base_judge_energy_storage_per": [
                 float(tpg_ship.govia_base_judge_energy_storage_per)
             ],
             "T_judge_time_times": [float(tpg_ship.judge_time_times)],
@@ -527,8 +701,11 @@ def simulation_result_to_df(
             "T_standby_lat": [float(tpg_ship.standby_lat)],
             "T_standby_lon": [float(tpg_ship.standby_lon)],
             # "T_typhoon_effective_range[km]": [int(tpg_ship.typhoon_effective_range)],
-            "T_total_gene_elect(mch)[GWh]": [
+            "T_total_gene_elect[GWh]": [
                 float(tpg_ship.total_gene_elect_list[-1] / 10**9)
+            ],
+            "T_total_gene_carrier[GWh]": [
+                float(tpg_ship.total_gene_carrier_list[-1] / 10**9)
             ],
             "T_total_loss_elect[GWh]": [
                 float(tpg_ship.total_loss_elect_list[-1] / 10**9)
@@ -580,7 +757,7 @@ def simulation_result_to_df(
             ],
             "T_battery_cost[100M JPY]": [float(tpg_ship.battery_cost / 10**8)],
             "T_building_cost[100M JPY]": [float(tpg_ship.building_cost)],
-            "T_toluene_cost[100M JPY]": [float(tpg_ship.toluene_cost)],
+            "T_carrier_cost[100M JPY]": [float(tpg_ship.carrier_cost)],
             "T_maintenance_cost[100M JPY]": [
                 float(tpg_ship.maintenance_cost * operating_years)
             ],
@@ -623,7 +800,7 @@ def simulation_result_to_df(
             "Total_fixed_cost[100M JPY]": [
                 float(
                     tpg_ship.building_cost
-                    + tpg_ship.toluene_cost
+                    + tpg_ship.carrier_cost
                     + st_base.building_cost
                     + sp_base.building_cost
                     + support_ship_1.building_cost
@@ -668,9 +845,9 @@ def run_simulation(cfg):
     storage_method = cfg.tpg_ship.storage_method
     max_storage_wh = cfg.tpg_ship.max_storage_wh
     electric_propulsion_max_storage_wh = cfg.tpg_ship.electric_propulsion_max_storage_wh
-    elect_trust_efficiency = cfg.tpg_ship.elect_trust_efficiency
-    MCH_to_elect_efficiency = cfg.tpg_ship.MCH_to_elect_efficiency
-    elect_to_MCH_efficiency = cfg.tpg_ship.elect_to_MCH_efficiency
+    trust_efficiency = cfg.tpg_ship.trust_efficiency
+    carrier_to_elect_efficiency = cfg.tpg_ship.carrier_to_elect_efficiency
+    elect_to_carrier_efficiency = cfg.tpg_ship.elect_to_carrier_efficiency
     generator_turbine_radius = cfg.tpg_ship.generator_turbine_radius
     generator_efficiency = cfg.tpg_ship.generator_efficiency
     generator_drag_coefficient = cfg.tpg_ship.generator_drag_coefficient
@@ -708,9 +885,9 @@ def run_simulation(cfg):
         storage_method,
         max_storage_wh,
         electric_propulsion_max_storage_wh,
-        elect_trust_efficiency,
-        MCH_to_elect_efficiency,
-        elect_to_MCH_efficiency,
+        trust_efficiency,
+        carrier_to_elect_efficiency,
+        elect_to_carrier_efficiency,
         generator_turbine_radius,
         generator_efficiency,
         generator_drag_coefficient,
@@ -861,23 +1038,24 @@ def objective(trial):
     # config.tpg_ship.hull_num = 1
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
-    # config.tpg_ship.storage_method = trial.suggest_int("storage_method", 1, 2)
+    # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
+    # config.tpg_ship.storage_method = 3 # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
         "tpgship_max_storage_GWh", 50, 1500
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
-    EP_max_storage_GWh_10 = trial.suggest_int(
-        "tpgship_EP_max_storage_GWh_10", 5, 200
-    )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
-    config.tpg_ship.electric_propulsion_max_storage_wh = (
-        EP_max_storage_GWh_10 * 100000000
-    )
+    # EP_max_storage_GWh_10 = trial.suggest_int(
+    #     "tpgship_EP_max_storage_GWh_10", 5, 200
+    # )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
+    # config.tpg_ship.electric_propulsion_max_storage_wh = (
+    #     EP_max_storage_GWh_10 * 100000000
+    # )
 
-    # config.tpg_ship.elect_trust_efficiency = trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
-    # config.tpg_ship.MCH_to_elect_efficiency = trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
-    # config.tpg_ship.elect_to_MCH_efficiency = trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
+    # config.tpg_ship.trust_efficiency = 0.68 # trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
+    # config.tpg_ship.carrier_to_elect_efficiency = 1.0 # trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
+    # config.tpg_ship.elect_to_carrier_efficiency = 0.8 # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
     sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 200)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
@@ -931,7 +1109,7 @@ def objective(trial):
     stbase_max_storage_ton = stbase_max_storage_ton_100k * 100000
     config.storage_base.max_storage_wh = (stbase_max_storage_ton / 379) * 10**9
 
-    # # 輸送船呼び出しタイミングに関する変更
+    # 輸送船呼び出しタイミングに関する変更
     # config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
 
     ############ Supply Baseのパラメータを指定 ############
@@ -1011,9 +1189,7 @@ def main(cfg: DictConfig) -> None:
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-    storage = (
-        "sqlite:///experiences/catamaran_cost_optimization_plus_supply_electricity.db"
-    )
+    storage = "sqlite:///experiences/catamaran_cost_optimize.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
@@ -1025,7 +1201,10 @@ def main(cfg: DictConfig) -> None:
     # 進捗バーのコールバックを使用してoptimizeを実行
     trial_num = 3000
     study.optimize(
-        objective, n_trials=trial_num, callbacks=[TqdmCallback(total=trial_num)]
+        objective,
+        n_trials=trial_num,
+        callbacks=[TqdmCallback(total=trial_num)],
+        n_jobs=8,
     )
 
     # 最良の試行を出力

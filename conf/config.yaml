@@ -8,12 +8,12 @@ tpg_ship:
   #TPG ship performance model
   initial_position: [24,154] # 南鳥島[24.29, 153.98] # lat, lon
   hull_num: 2 # 船体の数
-  storage_method: 2 # 1: 電気貯蔵, 2: MCH貯蔵
-  max_storage_wh: 616000000000 # 台風発電船の蓄電容量[Wh]
-  electric_propulsion_max_storage_wh: 14200000000 # 電気推進機用の蓄電池容量[Wh]
-  elect_trust_efficiency: 0.83 # 電気推進機の効率
-  MCH_to_elect_efficiency: 0.5 # MCHから電気への変換効率
-  elect_to_MCH_efficiency: 0.8 # 電気からMCHへの変換効率
+  storage_method: 4 # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
+  max_storage_wh: 600000000000 # 台風発電船の蓄電容量[Wh]
+  electric_propulsion_max_storage_wh: 0 # 電気推進機用の蓄電池容量[Wh]
+  trust_efficiency: 0.68 # 推進機におけるエネルギーキャリアーまたは電力のエネルギー変換効率(熱効率＊伝達効率)
+  carrier_to_elect_efficiency: 1.0 # エネルギーキャリアーから電気へのエネルギー変換効率
+  elect_to_carrier_efficiency: 0.75 # 電気からエネルギーキャリアーへの変換効率
   generator_turbine_radius: 20 # 発電機のタービンの半径[m]
   generator_efficiency: 0.3 # 発電機の効率
   generator_drag_coefficient: 0.3 # 発電機の発電時の抗力係数
