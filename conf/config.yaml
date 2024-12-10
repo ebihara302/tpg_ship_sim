@@ -12,7 +12,7 @@ tpg_ship:
   max_storage_wh: 600000000000 # 台風発電船の蓄電容量[Wh]
   electric_propulsion_max_storage_wh: 0 # 電気推進機用の蓄電池容量[Wh]
   trust_efficiency: 0.68 # 推進機におけるエネルギーキャリアーまたは電力のエネルギー変換効率(熱効率＊伝達効率)
-  carrier_to_elect_efficiency: 1.0 # エネルギーキャリアーから電気へのエネルギー変換効率
+  carrier_to_elect_efficiency: 1.0 # エネルギーキャリアーから電気へのエネルギー変換効率 電気推進等で電気を使用しない場合はなんでも良い
   elect_to_carrier_efficiency: 0.75 # 電気からエネルギーキャリアーへの変換効率
   generator_turbine_radius: 20 # 発電機のタービンの半径[m]
   generator_efficiency: 0.3 # 発電機の効率

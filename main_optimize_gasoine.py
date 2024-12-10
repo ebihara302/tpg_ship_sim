@@ -1039,7 +1039,7 @@ def objective(trial):
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
-    config.tpg_ship.storage_method = 5  # trial.suggest_int("storage_method", 1, 5)
+    config.tpg_ship.storage_method = 5 # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
         "tpgship_max_storage_GWh", 50, 1500
@@ -1052,6 +1052,7 @@ def objective(trial):
     # config.tpg_ship.electric_propulsion_max_storage_wh = (
     #     EP_max_storage_GWh_10 * 100000000
     # )
+    config.tpg_ship.electric_propulsion_max_storage_wh = 0.0
 
     config.tpg_ship.trust_efficiency = (
         0.68  # trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
@@ -1060,7 +1061,7 @@ def objective(trial):
         1.0  # trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
     )
     config.tpg_ship.elect_to_carrier_efficiency = (
-        0.4  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
+        0.40  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     )
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
     sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 200)
@@ -1195,7 +1196,7 @@ def main(cfg: DictConfig) -> None:
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-    storage = "sqlite:///experiences/catamaran_cost_optimize.db"
+    storage = "sqlite:///experiences/catamaran_cost_optimize_gasoline.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",

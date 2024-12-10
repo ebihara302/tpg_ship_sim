@@ -1039,7 +1039,7 @@ def objective(trial):
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
-    # config.tpg_ship.storage_method = 3 # trial.suggest_int("storage_method", 1, 5)
+    config.tpg_ship.storage_method = 4 # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
         "tpgship_max_storage_GWh", 50, 1500
@@ -1196,7 +1196,7 @@ def main(cfg: DictConfig) -> None:
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
-    storage = "sqlite:///experiences/catamaran_cost_optimize.db"
+    storage = "sqlite:///experiences/catamaran_cost_optimize_methanol.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",

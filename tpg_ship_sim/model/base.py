@@ -326,7 +326,7 @@ class Base:
                     self.supply_time_count = self.supply_time_count + 1
                     self.brance_condition = "cbbase Storage"
 
-    def cost_calculate(self):
+    def cost_calculate(self, TPGship1):
         """
         ############################ def cost_calculate ############################
 
@@ -356,12 +356,58 @@ class Base:
 
         # total_supply_list[-1]を基に利益を計算（供給拠点・兼用拠点の場合のみ計算）
         if self.base_type == 2 or self.base_type == 3:
-            # MCHをWhからtに変換　1GWh = 379t
-            total_supply_t = self.total_supply_list[-1] / 10**9 * 379
-            # MCHの価格を1tあたり水素を679[Nm3]生成するとして、量を計算
-            total_supply_hydrogen = total_supply_t * 679
-            # 水素の価格を1[Nm3]あたり20円として、利益を計算
-            self.profit = total_supply_hydrogen * 20  # 単位は円
-            self.profit = self.profit / 10**8  # 単位を億円に変換
+            if TPGship1.storage_method == 1:  # 電気貯蔵 = コンテナ型
+                # 電気の売価 25円/kWhとする。
+                self.profit = (self.total_supply_list[-1] / 1000) * 25
+
+            elif TPGship1.storage_method == 2:  # MCH貯蔵 = タンカー型
+                # MCHをWhからtに変換　1GWh = 379t
+                total_supply_t = self.total_supply_list[-1] / 10**9 * 379
+                # MCHの価格を1tあたり水素を679[Nm3]生成するとして、量を計算
+                total_supply_hydrogen = total_supply_t * 679
+                # 水素の価格を1[Nm3]あたり20円として、利益を計算
+                self.profit = total_supply_hydrogen * 20  # 単位は円
+                self.profit = self.profit / 10**8  # 単位を億円に変換
+
+            # 以下e-fuelは300JPY/Lとして計算
+            elif TPGship1.storage_method == 3:  # メタン貯蔵 = LNG船型
+                # LNGをWhからtに変換
+                LNG_mol = self.total_supply_list[-1] / ((802 / 3600) * 1000)
+                # メタンの分子量16.04g/molを用いてtに変換
+                LNG_t = LNG_mol * 16.04 / 10**6
+                # 0.425kg/LとしてLに変換
+                LNG_L = (LNG_t * 1000) / 0.425
+                # 利益を計算
+                self.profit = LNG_L * 300 / 10**8  # 単位を億円に変換
+
+            elif TPGship1.storage_method == 4:  # メタノール貯蔵 = タンカー型
+                # メタノールをWhからtに変換
+                # 物性より計算　メタノール1molの完全燃焼で726.2kJ=726.2/3600kWh
+                # mol数の計算
+                methanol_mol = self.total_supply_list[-1] / ((726.2 / 3600) * 1000)
+                # メタノールの分子量32.04g/molを用いてtに変換
+                methanol_t = methanol_mol * 32.04 / 10**6
+                # 0.792kg/LとしてLに変換
+                methanol_L = (methanol_t * 1000) / 0.792
+                # 利益を計算
+                self.profit = methanol_L * 300 / 10**8
+
+            elif TPGship1.storage_method == 5:  # e-ガソリン貯蔵 = タンカー型
+                # e-ガソリンをWhからtに変換
+                # 代表の分子としてC8H18（オクタン）を用いる
+                # オクタン1molの完全燃焼で5500kJ=5500/3600kWh
+                # mol数の計算
+                gasoline_mol = self.total_supply_list[-1] / ((5500 / 3600) * 1000)
+                # オクタンの分子量114.23g/molを用いてtに変換
+                gasoline_t = gasoline_mol * 114.23 / 10**6
+                # 0.75kg/LとしてLに変換
+                gasoline_L = (gasoline_t * 1000) / 0.75
+                # 利益を計算
+                self.profit = gasoline_L * 300 / 10**8
+
+            else:
+                self.profit = 0
+                print("設定ミス")
+
         else:
             self.profit = 0
