@@ -1039,7 +1039,7 @@ def objective(trial):
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
-    config.tpg_ship.storage_method = 3 # trial.suggest_int("storage_method", 1, 5)
+    config.tpg_ship.storage_method = 3  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
         "tpgship_max_storage_GWh", 50, 1500
@@ -1205,13 +1205,16 @@ def main(cfg: DictConfig) -> None:
         load_if_exists=True,
     )
 
+    n_jobs = int(os.cpu_count())
+    print(f"Number of CPUs: {n_jobs}")
+
     # 進捗バーのコールバックを使用してoptimizeを実行
     trial_num = 3000
     study.optimize(
         objective,
         n_trials=trial_num,
         callbacks=[TqdmCallback(total=trial_num)],
-        n_jobs=8,
+        n_jobs=n_jobs,
     )
 
     # 最良の試行を出力

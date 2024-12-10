@@ -1198,13 +1198,16 @@ def main(cfg: DictConfig) -> None:
         load_if_exists=True,
     )
 
+    n_jobs = int(os.cpu_count())
+    print(f"Number of CPUs: {n_jobs}")
+    
     # 進捗バーのコールバックを使用してoptimizeを実行
     trial_num = 3000
     study.optimize(
         objective,
         n_trials=trial_num,
         callbacks=[TqdmCallback(total=trial_num)],
-        n_jobs=8,
+        n_jobs=n_jobs,
     )
 
     # 最良の試行を出力
