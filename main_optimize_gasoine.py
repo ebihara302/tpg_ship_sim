@@ -524,12 +524,12 @@ def objective_value_calculation(
         + support_ship_2.transportation_cost
     )
     # 貯蔵拠点関連[億円]
-    st_base.cost_calculate()
+    st_base.cost_calculate(tpg_ship)
     st_base_total_cost = (
         st_base.building_cost + st_base.maintenance_cost * operating_years
     )
     # 供給拠点関連[億円]
-    sp_base.cost_calculate()
+    sp_base.cost_calculate(tpg_ship)
     sp_base_total_cost = (
         sp_base.building_cost + sp_base.maintenance_cost * operating_years
     )
@@ -626,12 +626,12 @@ def simulation_result_to_df(
         + support_ship_2.transportation_cost
     )
     # 貯蔵拠点関連[億円]
-    st_base.cost_calculate()
+    st_base.cost_calculate(tpg_ship)
     st_base_total_cost = (
         st_base.building_cost + st_base.maintenance_cost * operating_years
     )
     # 供給拠点関連[億円]
-    sp_base.cost_calculate()
+    sp_base.cost_calculate(tpg_ship)
     sp_base_total_cost = (
         sp_base.building_cost + sp_base.maintenance_cost * operating_years
     )
@@ -1039,7 +1039,7 @@ def objective(trial):
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
-    config.tpg_ship.storage_method = 5 # trial.suggest_int("storage_method", 1, 5)
+    config.tpg_ship.storage_method = 5  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
         "tpgship_max_storage_GWh", 50, 1500

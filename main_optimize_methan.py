@@ -524,12 +524,12 @@ def objective_value_calculation(
         + support_ship_2.transportation_cost
     )
     # 貯蔵拠点関連[億円]
-    st_base.cost_calculate()
+    st_base.cost_calculate(tpg_ship)
     st_base_total_cost = (
         st_base.building_cost + st_base.maintenance_cost * operating_years
     )
     # 供給拠点関連[億円]
-    sp_base.cost_calculate()
+    sp_base.cost_calculate(tpg_ship)
     sp_base_total_cost = (
         sp_base.building_cost + sp_base.maintenance_cost * operating_years
     )
@@ -626,12 +626,12 @@ def simulation_result_to_df(
         + support_ship_2.transportation_cost
     )
     # 貯蔵拠点関連[億円]
-    st_base.cost_calculate()
+    st_base.cost_calculate(tpg_ship)
     st_base_total_cost = (
         st_base.building_cost + st_base.maintenance_cost * operating_years
     )
     # 供給拠点関連[億円]
-    sp_base.cost_calculate()
+    sp_base.cost_calculate(tpg_ship)
     sp_base_total_cost = (
         sp_base.building_cost + sp_base.maintenance_cost * operating_years
     )
