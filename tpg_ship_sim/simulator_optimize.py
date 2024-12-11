@@ -168,7 +168,8 @@ def simulate(
     spSHIP1_data = support_ship_1.get_outputs(unix, date)
     spSHIP2_data = support_ship_2.get_outputs(unix, date)
 
-    for data_num in tqdm(range(record_count), desc="Simulating..."):
+    # for data_num in tqdm(range(record_count), desc="Simulating..."): # tqdmを使うと進捗が表示される
+    for data_num in range(record_count):
 
         year = datetime.fromtimestamp(current_time, UTC).year
 
@@ -227,32 +228,6 @@ def simulate(
 
         spSHIP1_data = support_ship_1.get_outputs(unix, date)
         spSHIP2_data = support_ship_2.get_outputs(unix, date)
-
-    # # 出力
-    # tpg_ship_data = tpg_ship_1.get_outputs_for_evaluation()
-    # # tpg_ship_param_log_file_pathのファイルにデータを追加する
-    # # 一時的に試行データを記録
-    # temp_csv_path = os.path.join(output_folder_path, temp_tpg_ship_param_log_file_name)
-    # if not os.path.exists(temp_csv_path):
-    #     tpg_ship_data.write_csv(temp_csv_path)
-    # else:
-    #     existing_data = pl.read_csv(temp_csv_path)
-    #     combined_data = pl.concat(
-    #         [existing_data, tpg_ship_data], how="vertical_relaxed"
-    #     )
-    #     combined_data.write_csv(temp_csv_path)
-
-    # # 最終CSVファイルに追記し、一時ファイルを削除
-    # final_csv_path = os.path.join(output_folder_path, tpg_ship_param_log_file_name)
-    # if os.path.exists(final_csv_path):
-    #     final_data = pl.read_csv(final_csv_path)
-    #     final_data = pl.concat([final_data, tpg_ship_data], how="vertical_relaxed")
-    # else:
-    #     final_data = tpg_ship_data
-
-    # final_data.write_csv(final_csv_path)
-
-    # os.remove(temp_csv_path)
 
 
 ############################################################################################

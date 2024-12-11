@@ -1018,6 +1018,29 @@ def run_simulation(cfg):
     if os.path.exists(final_csv_path):
         # ファイルが存在する場合、既存のデータを読み込む
         existing_data = pl.read_csv(final_csv_path)
+
+        # データ型でエラーが生じるのでその対策
+        # 基本新規データの方が正しいので、データの列名と型を取得
+        expected_schema = data.schema
+        # 既存データの列名と型を取得
+        existing_schema = existing_data.schema
+        # 比較して異なる場合のエラーを表示
+        if expected_schema != existing_schema:
+            print("スキーマが異なるため、データの追記ができません。")
+            print("expected_schema: ", expected_schema)
+            print("existing_schema: ", existing_schema)
+
+            # 新規データのスキーマに合わせて既存データを変換
+            existing_data = existing_data.cast(data.schema)
+            # df2をdf1のスキーマにキャスト
+            for column_name, column_dtype in expected_schema.items():
+                if column_name in existing_data.columns:
+                    existing_data = existing_data.with_column(
+                        existing_data[column_name].cast(column_dtype)
+                    )
+
+            print("changed existing_schema: ", expected_schema)
+
         # 新しいデータを既存のデータに追加
         updated_data = existing_data.vstack(data)
         # 更新されたデータをCSVファイルに書き込む
@@ -1204,6 +1227,9 @@ def main(cfg: DictConfig) -> None:
         direction="maximize",
         load_if_exists=True,
     )
+
+    # ログ出力を無効化　ターミナルが落ちることがあったため予防措置
+    optuna.logging.disable_default_handler()
 
     n_jobs = int(os.cpu_count())
     print(f"Number of CPUs: {n_jobs}")
