@@ -797,6 +797,13 @@ def simulation_result_to_df(
                     + support_ship_2.maintenance_cost
                 )
             ],
+            "Total_operating_cost_per_Year[100M JPY]": [
+                float(
+                    tpg_ship.carrier_cost
+                    + support_ship_1.transportation_cost
+                    + support_ship_2.transportation_cost
+                )
+            ],
             "Total_fixed_cost[100M JPY]": [
                 float(
                     tpg_ship.building_cost
