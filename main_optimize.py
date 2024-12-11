@@ -1041,7 +1041,7 @@ def run_simulation(cfg):
             # df2をdf1のスキーマにキャスト
             for column_name, column_dtype in expected_schema.items():
                 if column_name in existing_data.columns:
-                    existing_data = existing_data.with_column(
+                    existing_data = existing_data.with_columns(
                         existing_data[column_name].cast(column_dtype)
                     )
 
