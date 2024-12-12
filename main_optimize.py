@@ -652,8 +652,8 @@ def simulation_result_to_df(
         {
             # TPG ship (列名の先頭にT_を付与。探索しないものはコメントアウト)
             ## 装置パラメータ関連
-            # "T_hull_num": [int(tpg_ship.hull_num)],
-            # "T_storage_method": [int(tpg_ship.storage_method)],
+            "T_hull_num": [int(tpg_ship.hull_num)],
+            "T_storage_method": [int(tpg_ship.storage_method)],
             "T_max_storage[GWh]": [float(tpg_ship.max_storage / 10**9)],
             "T_EP_max_storage_wh[GWh]": [
                 float(tpg_ship.electric_propulsion_max_storage_wh / 10**9)
@@ -684,10 +684,14 @@ def simulation_result_to_df(
             "T_generator_rated_output[GW]": [
                 float(tpg_ship.generator_rated_output_w / 10**9)
             ],
-            # "T_generator_efficiency": [float(tpg_ship.generator_efficiency)],
-            # "T_generator_drag_coefficient": [float(tpg_ship.generator_drag_coefficient)],
-            # "T_generator_pillar_chord": [float(tpg_ship.generator_pillar_chord)],
-            # "T_generator_pillar_max_tickness": [float(tpg_ship.generator_pillar_max_tickness)],
+            "T_generator_efficiency": [float(tpg_ship.generator_efficiency)],
+            "T_generator_drag_coefficient": [
+                float(tpg_ship.generator_drag_coefficient)
+            ],
+            "T_generator_pillar_chord": [float(tpg_ship.generator_pillar_chord)],
+            "T_generator_pillar_max_tickness": [
+                float(tpg_ship.generator_pillar_max_tickness)
+            ],
             "T_generating_speed[kt]": [float(tpg_ship.generating_speed_kt)],
             "T_tpgship_return_speed[kt]": [float(tpg_ship.nomal_ave_speed)],
             "T_forecast_weight": [float(tpg_ship.forecast_weight)],
@@ -700,7 +704,7 @@ def simulation_result_to_df(
             ],
             "T_standby_lat": [float(tpg_ship.standby_lat)],
             "T_standby_lon": [float(tpg_ship.standby_lon)],
-            # "T_typhoon_effective_range[km]": [int(tpg_ship.typhoon_effective_range)],
+            "T_typhoon_effective_range[km]": [int(tpg_ship.typhoon_effective_range)],
             "T_total_gene_elect[GWh]": [
                 float(tpg_ship.total_gene_elect_list[-1] / 10**9)
             ],
@@ -831,6 +835,103 @@ def simulation_result_to_df(
         }
     )
 
+    # 念の為、データ型をcast
+    data = data.with_columns(
+        [
+            pl.col("T_hull_num").cast(pl.Int64),
+            pl.col("T_storage_method").cast(pl.Int64),
+            pl.col("T_max_storage[GWh]").cast(pl.Float64),
+            pl.col("T_EP_max_storage_wh[GWh]").cast(pl.Float64),
+            pl.col("T_sail_num").cast(pl.Int64),
+            pl.col("T_sail_area[m2]").cast(pl.Int64),
+            pl.col("T_sail_width[m]").cast(pl.Float64),
+            pl.col("T_sail_height[m]").cast(pl.Float64),
+            pl.col("T_sail_space").cast(pl.Float64),
+            pl.col("T_sail_steps").cast(pl.Int64),
+            pl.col("T_sail_weight").cast(pl.Float64),
+            pl.col("T_num_sails_per_row").cast(pl.Int64),
+            pl.col("T_num_sails_rows").cast(pl.Int64),
+            pl.col("T_sail_penalty").cast(pl.Float64),
+            pl.col("T_dwt[t]").cast(pl.Float64),
+            pl.col("T_hull_L_oa[m]").cast(pl.Float64),
+            pl.col("T_hull_B[m]").cast(pl.Float64),
+            pl.col("T_trust_efficiency").cast(pl.Float64),
+            pl.col("T_carrier_to_elect_efficiency").cast(pl.Float64),
+            pl.col("T_elect_to_carrier_efficiency").cast(pl.Float64),
+            pl.col("T_generator_num").cast(pl.Int64),
+            pl.col("T_generator_turbine_radius[m]").cast(pl.Float64),
+            pl.col("T_generator_pillar_width").cast(pl.Float64),
+            pl.col("T_generator_rated_output[GW]").cast(pl.Float64),
+            pl.col("T_generator_efficiency").cast(pl.Float64),
+            pl.col("T_generator_drag_coefficient").cast(pl.Float64),
+            pl.col("T_generator_pillar_chord").cast(pl.Float64),
+            pl.col("T_generator_pillar_max_tickness").cast(pl.Float64),
+            pl.col("T_generating_speed[kt]").cast(pl.Float64),
+            pl.col("T_tpgship_return_speed[kt]").cast(pl.Float64),
+            pl.col("T_forecast_weight").cast(pl.Float64),
+            pl.col("T_govia_base_judge_energy_storage_per").cast(pl.Float64),
+            pl.col("T_judge_time_times").cast(pl.Float64),
+            pl.col("T_operational_reserve_percentage").cast(pl.Int64),
+            pl.col("T_standby_lat").cast(pl.Float64),
+            pl.col("T_standby_lon").cast(pl.Float64),
+            pl.col("T_typhoon_effective_range[km]").cast(pl.Int64),
+            pl.col("T_total_gene_elect[GWh]").cast(pl.Float64),
+            pl.col("T_total_gene_carrier[GWh]").cast(pl.Float64),
+            pl.col("T_total_loss_elect[GWh]").cast(pl.Float64),
+            pl.col("T_sum_supply_elect[GWh]").cast(pl.Float64),
+            pl.col("T_minus_storage_penalty").cast(pl.Int64),
+            pl.col("St_base_type").cast(pl.Int64),
+            pl.col("St_lat").cast(pl.Float64),
+            pl.col("St_lon").cast(pl.Float64),
+            pl.col("St_max_storage[GWh]").cast(pl.Float64),
+            pl.col("St_call_per").cast(pl.Float64),
+            pl.col("St_total_supply[GWh]").cast(pl.Float64),
+            pl.col("Sp_base_type").cast(pl.Int64),
+            pl.col("Sp_lat").cast(pl.Float64),
+            pl.col("Sp_lon").cast(pl.Float64),
+            pl.col("Sp_max_storage[GWh]").cast(pl.Float64),
+            pl.col("Sp_total_supply[GWh]").cast(pl.Float64),
+            pl.col("Ss1_max_storage[GWh]").cast(pl.Float64),
+            pl.col("Ss1_ship_speed[kt]").cast(pl.Int64),
+            pl.col("Ss1_EP_max_storage[GWh]").cast(pl.Float64),
+            pl.col("Ss1_Total_consumption_elect[GWh]").cast(pl.Float64),
+            pl.col("Ss1_Total_received_elect[GWh]").cast(pl.Float64),
+            pl.col("Ss2_max_storage[GWh]").cast(pl.Float64),
+            pl.col("Ss2_ship_speed[kt]").cast(pl.Int64),
+            pl.col("Ss2_EP_max_storage[GWh]").cast(pl.Float64),
+            pl.col("Ss2_Total_consumption_elect[GWh]").cast(pl.Float64),
+            pl.col("Ss2_Total_received_elect[GWh]").cast(pl.Float64),
+            pl.col("T_hull_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_wing_sail_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_underwater_turbine_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_battery_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_building_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_carrier_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_total_cost[100M JPY]").cast(pl.Float64),
+            pl.col("St_building_cost[100M JPY]").cast(pl.Float64),
+            pl.col("St_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("St_total_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Sp_building_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Sp_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Sp_total_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss1_building_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss1_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss1_transportation_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss1_total_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss2_building_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss2_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss2_transportation_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss2_total_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Total_maintain_cost_per_Year[100M JPY]").cast(pl.Float64),
+            pl.col("Total_operating_cost_per_Year[100M JPY]").cast(pl.Float64),
+            pl.col("Total_fixed_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Total_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Total_profit[100M JPY]").cast(pl.Float64),
+            pl.col("Objective_value").cast(pl.Float64),
+        ]
+    )
+
     return data
 
 
@@ -872,6 +973,7 @@ def run_simulation(cfg):
         sail_area,
         sail_space,
     )
+    sail_num = int(sail_num)  # 整数でない出力になぜかなることがあったので予防策
 
     sail_steps = cfg.tpg_ship.sail_steps
     ship_return_speed_kt = cfg.tpg_ship.ship_return_speed_kt
