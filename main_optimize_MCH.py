@@ -704,7 +704,7 @@ def simulation_result_to_df(
             ],
             "T_standby_lat": [float(tpg_ship.standby_lat)],
             "T_standby_lon": [float(tpg_ship.standby_lon)],
-            # "T_typhoon_effective_range[km]": [int(tpg_ship.typhoon_effective_range)],
+            "T_typhoon_effective_range[km]": [int(tpg_ship.typhoon_effective_range)],
             "T_total_gene_elect[GWh]": [
                 float(tpg_ship.total_gene_elect_list[-1] / 10**9)
             ],
