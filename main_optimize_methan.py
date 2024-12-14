@@ -652,8 +652,8 @@ def simulation_result_to_df(
         {
             # TPG ship (列名の先頭にT_を付与。探索しないものはコメントアウト)
             ## 装置パラメータ関連
-            # "T_hull_num": [int(tpg_ship.hull_num)],
-            # "T_storage_method": [int(tpg_ship.storage_method)],
+            "T_hull_num": [int(tpg_ship.hull_num)],
+            "T_storage_method": [int(tpg_ship.storage_method)],
             "T_max_storage[GWh]": [float(tpg_ship.max_storage / 10**9)],
             "T_EP_max_storage_wh[GWh]": [
                 float(tpg_ship.electric_propulsion_max_storage_wh / 10**8)
@@ -684,10 +684,10 @@ def simulation_result_to_df(
             "T_generator_rated_output[GW]": [
                 float(tpg_ship.generator_rated_output_w / 10**9)
             ],
-            # "T_generator_efficiency": [float(tpg_ship.generator_efficiency)],
-            # "T_generator_drag_coefficient": [float(tpg_ship.generator_drag_coefficient)],
-            # "T_generator_pillar_chord": [float(tpg_ship.generator_pillar_chord)],
-            # "T_generator_pillar_max_tickness": [float(tpg_ship.generator_pillar_max_tickness)],
+            "T_generator_efficiency": [float(tpg_ship.generator_efficiency)],
+            "T_generator_drag_coefficient": [float(tpg_ship.generator_drag_coefficient)],
+            "T_generator_pillar_chord": [float(tpg_ship.generator_pillar_chord)],
+            "T_generator_pillar_max_tickness": [float(tpg_ship.generator_pillar_max_tickness)],
             "T_generating_speed[kt]": [float(tpg_ship.generating_speed_kt)],
             "T_tpgship_return_speed[kt]": [float(tpg_ship.nomal_ave_speed)],
             "T_forecast_weight": [float(tpg_ship.forecast_weight)],
