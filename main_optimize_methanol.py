@@ -1344,7 +1344,7 @@ def main(cfg: DictConfig) -> None:
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 2200
+    trial_num = 3000
     study.optimize(
         objective,
         n_trials=trial_num,
