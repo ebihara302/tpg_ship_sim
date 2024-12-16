@@ -15,6 +15,9 @@ from tqdm import tqdm
 from tpg_ship_sim import simulator_optimize
 from tpg_ship_sim.model import base, forecaster, support_ship, tpg_ship
 
+# 起動時の出力フォルダ名を取得するためグローバル変数に設定
+output_folder_path = None
+
 
 # 進捗バーを更新するコールバック関数を定義
 class TqdmCallback(object):
@@ -940,8 +943,6 @@ def run_simulation(cfg):
     simulation_start_time = cfg.env.simulation_start_time
     simulation_end_time = cfg.env.simulation_end_time
 
-    output_folder_path = HydraConfig.get().run.dir
-
     models_param_log_file_name = cfg.output_env.models_param_log_file_name
 
     final_csv_path = output_folder_path + "/" + models_param_log_file_name
@@ -1317,6 +1318,9 @@ def objective(trial):
 
 @hydra.main(config_name="config", version_base=None, config_path="conf")
 def main(cfg: DictConfig) -> None:
+
+    global output_folder_path
+    output_folder_path = HydraConfig.get().run.dir
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"

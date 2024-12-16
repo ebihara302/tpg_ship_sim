@@ -15,6 +15,9 @@ from tqdm import tqdm
 from tpg_ship_sim import simulator_optimize
 from tpg_ship_sim.model import base, forecaster, support_ship, tpg_ship
 
+# 起動時の出力フォルダ名を取得するためグローバル変数に設定
+output_folder_path = None
+
 
 # 進捗バーを更新するコールバック関数を定義
 class TqdmCallback(object):
@@ -685,9 +688,13 @@ def simulation_result_to_df(
                 float(tpg_ship.generator_rated_output_w / 10**9)
             ],
             "T_generator_efficiency": [float(tpg_ship.generator_efficiency)],
-            "T_generator_drag_coefficient": [float(tpg_ship.generator_drag_coefficient)],
+            "T_generator_drag_coefficient": [
+                float(tpg_ship.generator_drag_coefficient)
+            ],
             "T_generator_pillar_chord": [float(tpg_ship.generator_pillar_chord)],
-            "T_generator_pillar_max_tickness": [float(tpg_ship.generator_pillar_max_tickness)],
+            "T_generator_pillar_max_tickness": [
+                float(tpg_ship.generator_pillar_max_tickness)
+            ],
             "T_generating_speed[kt]": [float(tpg_ship.generating_speed_kt)],
             "T_tpgship_return_speed[kt]": [float(tpg_ship.nomal_ave_speed)],
             "T_forecast_weight": [float(tpg_ship.forecast_weight)],
@@ -936,8 +943,6 @@ def run_simulation(cfg):
     typhoon_data_path = cfg.env.typhoon_data_path
     simulation_start_time = cfg.env.simulation_start_time
     simulation_end_time = cfg.env.simulation_end_time
-
-    output_folder_path = HydraConfig.get().run.dir
 
     models_param_log_file_name = cfg.output_env.models_param_log_file_name
 
@@ -1321,6 +1326,9 @@ def objective(trial):
 
 @hydra.main(config_name="config", version_base=None, config_path="conf")
 def main(cfg: DictConfig) -> None:
+
+    global output_folder_path
+    output_folder_path = HydraConfig.get().run.dir
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
