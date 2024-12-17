@@ -462,6 +462,56 @@ def sp_ship_EP_storage_cal(
     return sp_ship_EP_storage
 
 
+def tank_capacity_ton_to_wh(tank_capacity_ton, tpgship_storage_method):
+    """
+    ############################ def tank_capacity_ton_to_wh ############################
+
+    [ 説明 ]
+
+    タンク容量[t]をWhに変換する関数です。
+
+    ##############################################################################
+
+    引数 :
+        tank_capacity_ton (float) : タンク容量[t]
+        tpgship_storage_method (int) : 台風発電船の貯蔵方法
+
+    戻り値 :
+        tank_capacity_wh (float) : タンク容量[Wh]
+
+    #############################################################################
+    """
+    if tpgship_storage_method == 1:  # 電気貯蔵
+        tank_capacity_wh = tank_capacity_ton * 1000 * 1000
+
+    elif tpgship_storage_method == 2:  # MCH貯蔵
+        # MCHのエネルギー密度は1kgあたり12000Whとする
+        tank_capacity_wh = tank_capacity_ton * 47.4 / 0.0898 * 5000
+
+    elif tpgship_storage_method == 3:  # メタン貯蔵
+        # メタンのエネルギー密度は1molあたり802kJ=802/3600kWhとする
+        # mol数の計算
+        mol = (tank_capacity_ton * 10**6) / 16.04
+        tank_capacity_wh = mol * (802 / 3600 * 1000)
+
+    elif tpgship_storage_method == 4:  # メタノール貯蔵
+        # メタノールのエネルギー密度は1molあたり726.2kJ=726.2/3600kWhとする
+        # mol数の計算
+        mol = (tank_capacity_ton * 10**6) / 32.04
+        tank_capacity_wh = mol * (726.2 / 3600 * 1000)
+
+    elif tpgship_storage_method == 5:  # e-ガソリン貯蔵
+        # オクタンのエネルギー密度は1molあたり5500kJ=5500/3600kWhとする
+        # mol数の計
+        mol = (tank_capacity_ton * 10**6) / 114.23
+        tank_capacity_wh = mol * (5500 / 3600 * 1000)
+
+    else:
+        print("cannot cal")
+
+    return tank_capacity_wh
+
+
 def objective_value_calculation(
     tpg_ship,
     st_base,
@@ -1239,10 +1289,12 @@ def objective(trial):
         "stbase_max_storage_ton_100k", 1, 15
     )
     stbase_max_storage_ton = stbase_max_storage_ton_100k * 100000
-    config.storage_base.max_storage_wh = (stbase_max_storage_ton / 379) * 10**9
+    config.storage_base.max_storage_wh = tank_capacity_ton_to_wh(
+        stbase_max_storage_ton, config.tpg_ship.storage_method
+    )
 
     # 輸送船呼び出しタイミングに関する変更
-    # config.storage_base.call_per = trial.suggest_int("stbase_call_per", 10, 100)
+    config.storage_base.call_per = trial.suggest_int("stbase_call_per", 1, 100)
 
     ############ Supply Baseのパラメータを指定 ############
 
@@ -1262,7 +1314,9 @@ def objective(trial):
         "spbase_max_storage_ton_100k", 1, 15
     )
     spbase_max_storage_ton = spbase_max_storage_ton_100k * 100000
-    config.supply_base.max_storage_wh = (spbase_max_storage_ton / 379) * 10**9
+    config.supply_base.max_storage_wh = tank_capacity_ton_to_wh(
+        spbase_max_storage_ton, config.tpg_ship.storage_method
+    )
     # 輸送船呼び出しタイミングに関する変更(多分使うことはない)
     # config.supply_base.call_per = trial.suggest_int("spbase_call_per", 10, 100)
 
