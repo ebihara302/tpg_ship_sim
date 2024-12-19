@@ -50,7 +50,6 @@ class Support_ship:
     arrived_storagebase = 0
     stay_time = 0
 
-    tank_method = 2  # MCH
     batttery_method = 1  # ELECT
 
     target_lat = np.nan
@@ -68,6 +67,7 @@ class Support_ship:
     def __init__(
         self,
         supply_base_locate,
+        storage_method,
         max_storage_wh,
         support_ship_speed_kt,
         EP_max_storage,
@@ -77,6 +77,7 @@ class Support_ship:
         self.supplybase_lon = supply_base_locate[1]
         self.ship_lat = supply_base_locate[0]
         self.ship_lon = supply_base_locate[1]
+        self.storage_method = storage_method
         self.max_storage = max_storage_wh
         self.support_ship_speed = support_ship_speed_kt
         self.EP_max_storage = EP_max_storage
@@ -152,7 +153,7 @@ class Support_ship:
 
         return data
 
-    def cal_dwt(self, method, storage):
+    def cal_dwt(self, storage_method, storage):
         """
         ############################ def cal_dwt ############################
 
@@ -172,14 +173,37 @@ class Support_ship:
         #############################################################################
         """
         # 載貨重量トンを算出する。単位はt。
+        # storageの容量は中の物質を完全燃焼させた場合のエネルギー量として考える
 
-        if method == 1:  # 電気貯蔵
+        if storage_method == 1:  # 電気貯蔵
             # 重量エネルギー密度1000Wh/kgの電池を使うこととする。
             dwt = storage / 1000 / 1000
 
-        elif method == 2:  # 水素貯蔵
+        elif storage_method == 2:  # MCH貯蔵
             # 有機ハイドライドで水素を貯蔵することとする。
             dwt = storage / 5000 * 0.0898 / 47.4
+
+        elif storage_method == 3:  # メタン貯蔵
+            # 物性より計算　メタン1molの完全燃焼で802kJ=802/3600kWh
+            # mol数の計算
+            mol = storage / ((802 / 3600) * 1000)
+            # メタンの分子量16.04g/molを用いてtに変換
+            dwt = mol * 16.04 / 10**6
+
+        elif storage_method == 4:  # メタノール貯蔵
+            # 物性より計算　メタノール1molの完全燃焼で726.2kJ=726.2/3600kWh
+            # mol数の計算
+            mol = storage / ((726.2 / 3600) * 1000)
+            # メタノールの分子量32.04g/molを用いてtに変換
+            dwt = mol * 32.04 / 10**6
+
+        elif storage_method == 5:  # e-ガソリン貯蔵
+            # 代表の分子としてC8H18（オクタン）を用いる
+            # オクタン1molの完全燃焼で5500kJ=5500/3600kWh
+            # mol数の計算
+            mol = storage / ((5500 / 3600) * 1000)
+            # オクタンの分子量114.23g/molを用いてtに変換
+            dwt = mol * 114.23 / 10**6
 
         else:
             print("cannot cal")
@@ -230,7 +254,7 @@ class Support_ship:
             k = 1.7
             power = k * ((sum_dwt_t) ** (2 / 3)) * (max_speed**3)
 
-        elif storage1_method == 2:  # 水素貯蔵
+        elif storage1_method >= 2:  # 水素貯蔵
             # タンカー型
             k = 2.2
             power = k * ((sum_dwt_t) ** (2 / 3)) * (max_speed**3)
@@ -485,7 +509,7 @@ class Support_ship:
             self.cal_maxspeedpower(
                 self.speed_kt,
                 self.max_storage,
-                self.tank_method,
+                self.storage_method,
                 self.EP_max_storage,
                 self.batttery_method,
             )
@@ -554,7 +578,7 @@ class Support_ship:
             self.cal_maxspeedpower(
                 self.speed_kt,
                 self.storage,
-                self.tank_method,
+                self.storage_method,
                 self.EP_max_storage,
                 self.batttery_method,
             )
@@ -635,7 +659,7 @@ class Support_ship:
             #     self.cal_maxspeedpower(
             #         self.speed_kt,
             #         self.storage,
-            #         self.tank_method,
+            #         self.storage_method,
             #         self.EP_max_storage,
             #         self.batttery_method,
             #     )
@@ -654,6 +678,168 @@ class Support_ship:
             else:
                 self.total_received_elect += 0
                 self.total_consumption_elect += 0
+
+    # コンテナ型の船体寸法計算
+    def calculate_LB_container(self, total_ship_weight_per_body):
+        """
+        ############################ def calculate_LB_container ############################
+
+        [ 説明 ]
+
+        コンテナ型の船体の寸法を算出する関数です。
+
+        船舶の主要諸元に関する解析(https://www.ysk.nilim.go.jp/kenkyuseika/pdf/ks0991.pdf)より計算を行います。
+
+        ##############################################################################
+
+        引数 :
+            total_ship_weight_per_body (float) : 1つの船体の載貨重量トン[t]
+
+        戻り値 :
+            L_oa (float) : 船体の全長
+            B (float) : 船体の幅
+
+        #############################################################################
+        """
+
+        if total_ship_weight_per_body < 35000:
+            L_oa = 6.0564 * (total_ship_weight_per_body**0.3398)
+            B = 1.4257 * (total_ship_weight_per_body**0.2883)
+
+        elif 35000 <= total_ship_weight_per_body < 45000:
+            L_oa = 228.3
+            B = 31.8
+
+        elif 45000 <= total_ship_weight_per_body < 55000:
+            L_oa = 268.8
+            B = 33.7
+
+        elif 55000 <= total_ship_weight_per_body < 65000:
+            L_oa = 284.5
+            B = 35.5
+
+        elif 65000 <= total_ship_weight_per_body < 75000:
+            L_oa = 291.0
+            B = 39.2
+
+        elif 75000 <= total_ship_weight_per_body < 85000:
+            L_oa = 304.8
+            B = 42.0
+
+        elif 85000 <= total_ship_weight_per_body < 95000:
+            L_oa = 310.9
+            B = 44.1
+
+        elif 95000 <= total_ship_weight_per_body < 105000:
+            L_oa = 338.0
+            B = 45.3
+
+        elif 105000 <= total_ship_weight_per_body < 135000:
+            L_oa = 343.1
+            if total_ship_weight_per_body < 115000:
+                B = 47.3
+            elif 115000 <= total_ship_weight_per_body < 125000:
+                B = 48.0
+            else:
+                B = 48.5
+
+        elif 135000 <= total_ship_weight_per_body < 155000:
+            L_oa = 367.5
+            if total_ship_weight_per_body < 145000:
+                B = 48.5
+            else:
+                B = 52.0
+
+        elif 155000 <= total_ship_weight_per_body < 175000:
+            L_oa = 378.3
+            B = 52.0
+
+        else:
+            L_oa = 399.7
+            B = 59.4
+
+        return L_oa, B
+
+    # タンカー型の船体寸法計算
+    def calculate_LB_tanker(self, total_ship_weight_per_body):
+        """
+        ############################ def calculate_LB_tanker ############################
+
+        [ 説明 ]
+
+        タンカー型の船体の寸法を算出する関数です。
+
+        船舶の主要諸元に関する解析(https://www.ysk.nilim.go.jp/kenkyuseika/pdf/ks0991.pdf)より計算を行います。
+
+        ##############################################################################
+
+        引数 :
+            total_ship_weight_per_body (float) : 1つの船体の載貨重量トン[t]
+
+        戻り値 :
+            L_oa (float) : 船体の全長
+            B (float) : 船体の幅
+
+        #############################################################################
+        """
+
+        if total_ship_weight_per_body < 20000:
+            L_oa = 5.4061 * (total_ship_weight_per_body**0.3500)
+            B = 1.4070 * (total_ship_weight_per_body**0.2864)
+
+        elif 20000 <= total_ship_weight_per_body < 280000:
+            L_oa = 10.8063 * (total_ship_weight_per_body**0.2713)
+            if total_ship_weight_per_body < 40000:
+                B = 1.4070 * (total_ship_weight_per_body**0.2864)
+            elif 40000 <= total_ship_weight_per_body < 80000:
+                B = 32.9
+            elif 80000 <= total_ship_weight_per_body < 120000:
+                B = 43.5
+            elif 120000 <= total_ship_weight_per_body < 200000:
+                B = 48.9
+            else:
+                B = 60.2
+
+        else:
+            L_oa = 333.7
+            B = 60.2
+
+        return L_oa, B
+
+    # LNG船型の船体寸法計算
+    def calculate_LB_lng(self, total_ship_weight_per_body):
+        """
+        ############################ def calculate_LB_lng ############################
+
+        [ 説明 ]
+
+        LNG船型の船体の寸法を算出する関数です。
+
+        船舶の主要諸元に関する解析(https://www.ysk.nilim.go.jp/kenkyuseika/pdf/ks0991.pdf)より計算を行います。
+
+        ##############################################################################
+
+        引数 :
+            total_ship_weight_per_body (float) : 1つの船体の載貨重量トン[t]
+
+        戻り値 :
+            L_oa (float) : 船体の全長
+            B (float) : 船体の幅
+
+        #############################################################################
+        """
+        # 横軸がGT（総トン数）で記載されていたので、DWTをGTに変換する。一般にDWTがGTの0.6〜0.8倍程度とのことを利用する。
+        GT = total_ship_weight_per_body / 0.7
+
+        # GTに対する船体の全長、船体の幅を算出
+        if GT < 150000:
+            L_oa = 6.1272 * (GT**0.3343)
+            B = 1.1239 * (GT**0.3204)
+        else:
+            L_oa = 345.2
+            B = 54.6
+
+        return L_oa, B
 
     def calculate_hull_size(self):
         """
@@ -675,7 +861,7 @@ class Support_ship:
         # 「統計解析による船舶諸元に関する研究」よりDWTとL_oa,Bの値を算出する
 
         # DWTの記録
-        main_storage_dwt = self.cal_dwt(self.tank_method, self.max_storage)
+        main_storage_dwt = self.cal_dwt(self.storage_method, self.max_storage)
         electric_propulsion_storage_dwt = self.cal_dwt(
             self.batttery_method, self.EP_max_storage
         )
@@ -689,40 +875,18 @@ class Support_ship:
         total_ship_weight = sum_dwt_t
 
         # 船体の寸法を計算
-        if self.tank_method == 1:  # 電気貯蔵 = バルカー型
-            if total_ship_weight < 220000:
-                L_oa = 7.9387 * (total_ship_weight**0.2996)
-                B = 1.4257 * (total_ship_weight**0.2883)
+        if self.storage_method == 1:  # 電気貯蔵 = コンテナ型
+            L_oa, B = self.calculate_LB_container(total_ship_weight)
 
-            elif 220000 <= total_ship_weight < 330000:
-                L_oa = 139.3148 * (total_ship_weight**0.069)
-                B = 13.8365 * (total_ship_weight**0.1127)
+        elif (
+            (self.storage_method == 2)
+            or (self.storage_method == 4)
+            or (self.storage_method == 5)
+        ):  # MCH・メタノール・e-ガソリン貯蔵 = タンカー型
+            L_oa, B = self.calculate_LB_tanker(total_ship_weight)
 
-            else:
-                L_oa = 361.2
-                B = 65.0
-
-        elif self.tank_method == 2:  # 水素貯蔵 = タンカー型
-            if total_ship_weight < 20000:
-                L_oa = 5.4061 * (total_ship_weight**0.3500)
-                B = 1.4070 * (total_ship_weight**0.2864)
-
-            elif 20000 <= total_ship_weight < 280000:
-                L_oa = 10.8063 * (total_ship_weight**0.2713)
-                if total_ship_weight < 40000:
-                    B = 1.4070 * (total_ship_weight**0.2864)
-                elif 40000 <= total_ship_weight < 80000:
-                    B = 32.9
-                elif 80000 <= total_ship_weight < 120000:
-                    B = 43.5
-                elif 120000 <= total_ship_weight < 200000:
-                    B = 48.9
-                else:
-                    B = 60.2
-
-            else:
-                L_oa = 333.7
-                B = 60.2
+        elif self.storage_method == 3:  # メタン貯蔵 = LNG船型
+            L_oa, B = self.calculate_LB_lng(total_ship_weight)
 
         # L_oa,Bの記録
         self.hull_L_oa = L_oa
@@ -744,10 +908,40 @@ class Support_ship:
         # 船の建造費用
         # 船長と船幅を計算
         self.calculate_hull_size()
-        # 船体価格[円]
-        hull_cost = 0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+        # storage_methodで異なるコストを計算
+        if self.storage_method == 1:  # 電気貯蔵(コンテナ型)
+            # 船体価格+甲板補強価格[円]
+            self.hull_cost = (
+                0.00483 * (self.ship_dwt**0.878) * 10**6 * 160
+                + 500000 * self.hull_L_oa * self.hull_B
+            )
+
+        elif self.storage_method == 2:  # MCH貯蔵
+            self.hull_cost = (
+                0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+                + 500000 * self.hull_L_oa * self.hull_B
+            )
+
+        elif self.storage_method == 3:  # メタン貯蔵
+            self.hull_cost = (
+                4.41 * 0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+                + 500000 * self.hull_L_oa * self.hull_B
+            )  # LNG船の補正あり
+
+        elif self.storage_method == 4:  # メタノール貯蔵
+            self.hull_cost = (
+                0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+                + 500000 * self.hull_L_oa * self.hull_B
+            )  # タンカーと同価格
+
+        elif self.storage_method == 5:  # e-ガソリン貯蔵
+            self.hull_cost = (
+                0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
+                + 500000 * self.hull_L_oa * self.hull_B
+            )  # タンカーと同価格
+
         # 電動機モーターの価格[円]　船体価格の10%
-        motor_cost = 0.1 * hull_cost
+        motor_cost = 0.1 * self.hull_cost
         # バッテリーの価格[円] 75ドル/kWhで1ドル=160円 240MWhの電池を必要分搭載するとする。
         n_battery = math.ceil(
             (self.EP_max_storage / 10**6) / 240
@@ -755,7 +949,7 @@ class Support_ship:
         battery_cost = (240 * 10**3 * 75) * n_battery * 160
 
         # 船の建造費用[億円]
-        self.building_cost = (hull_cost + motor_cost + battery_cost) / 10**8
+        self.building_cost = (self.hull_cost + motor_cost + battery_cost) / 10**8
 
         # 船の維持費用[億円] 年間で建造コストの3％とする
         self.maintenance_cost = self.building_cost * 0.03

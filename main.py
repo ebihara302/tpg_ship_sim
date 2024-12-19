@@ -115,12 +115,14 @@ def main(cfg: DictConfig) -> None:
 
     # Support ship 1
     support_ship_1_supply_base_locate = cfg.supply_base.locate
+    support_ship_1_storage_method = cfg.tpg_ship.storage_method
     support_ship_1_max_storage_wh = cfg.support_ship_1.max_storage_wh
     support_ship_1_max_speed_kt = cfg.support_ship_1.ship_speed_kt
     support_ship_1_EP_max_storage_wh = cfg.support_ship_1.EP_max_storage_wh
     support_ship_1_elect_trust_efficiency = cfg.support_ship_1.elect_trust_efficiency
     support_ship_1 = support_ship.Support_ship(
         support_ship_1_supply_base_locate,
+        support_ship_1_storage_method,
         support_ship_1_max_storage_wh,
         support_ship_1_max_speed_kt,
         support_ship_1_EP_max_storage_wh,
@@ -129,12 +131,14 @@ def main(cfg: DictConfig) -> None:
 
     # Support ship 2
     support_ship_2_supply_base_locate = cfg.supply_base.locate
+    support_ship_2_storage_method = cfg.tpg_ship.storage_method
     support_ship_2_max_storage_wh = cfg.support_ship_2.max_storage_wh
     support_ship_2_max_speed_kt = cfg.support_ship_2.ship_speed_kt
     support_ship_2_EP_max_storage_wh = cfg.support_ship_2.EP_max_storage_wh
     support_ship_2_elect_trust_efficiency = cfg.support_ship_2.elect_trust_efficiency
     support_ship_2 = support_ship.Support_ship(
         support_ship_2_supply_base_locate,
+        support_ship_2_storage_method,
         support_ship_2_max_storage_wh,
         support_ship_2_max_speed_kt,
         support_ship_2_EP_max_storage_wh,

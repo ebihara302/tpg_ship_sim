@@ -366,6 +366,7 @@ def calculate_max_sail_num(
 
 
 def sp_ship_EP_storage_cal(
+    storage_method,
     max_storage_wh,
     support_ship_speed_kt,
     elect_trust_efficiency,
@@ -382,6 +383,7 @@ def sp_ship_EP_storage_cal(
     ##############################################################################
 
     引数 :
+        storage_method (int) : 貯蔵方法の種類。1=電気貯蔵,2=MCH貯蔵,3=メタン貯蔵,4=メタノール貯蔵,5=e-ガソリン貯蔵
         max_storage_wh (float) : 輸送船の最大電気貯蔵量[Wh]
         support_ship_speed_kt (float) : 輸送船の最大速度[kt]
         elect_trust_efficiency (float) : サポート船の電気推進効率
@@ -394,7 +396,10 @@ def sp_ship_EP_storage_cal(
     #############################################################################
     """
     # 船型で決まる定数k 以下はタンカーでk=2.2（船速がktの時）における処理
-    k = 2.2 / (1.852**3)
+    if storage_method == 1:  # 電気貯蔵
+        k = 1.7 / (1.852**3)
+    elif storage_method >= 2:  # 電気貯蔵以外
+        k = 2.2 / (1.852**3)
 
     # 輸送船の電気貯蔵量を計算
     # geopyで貯蔵拠点から供給拠点までの距離を大圏距離で計算
@@ -402,8 +407,8 @@ def sp_ship_EP_storage_cal(
     # support_ship_speed_ktをkm/hに変換
     max_speed_kmh = support_ship_speed_kt * 1.852
 
-    # max_storage_whをDWTに変換　MCHのタンクとして2を指定してcal_dwt関数を使う
-    max_storage_ton = cal_dwt(2, max_storage_wh)
+    # max_storage_whをDWTに変換
+    max_storage_ton = cal_dwt(storage_method, max_storage_wh)
 
     # 反復計算時の初期値
     initial_guess = max_storage_ton
@@ -596,22 +601,75 @@ def objective_value_calculation(
         + sp_base_total_cost
     )
 
+    # 帆の大きさによるペナルティ
+    sail_length_penalty = 0
+    max_sail_length = 175.0  # 今までの検証結果でそれらしい値となるものを設定した[m]
+    allowable_sail_length = (
+        tpg_ship.hull_B * 1.8
+    )  # 許容される帆の大きさ[m] 船体の幅の1.8倍とする
+    # ペナルティが生じる帆の長さを決める
+    if allowable_sail_length > max_sail_length:
+        penalty_sail_length = max_sail_length
+    else:
+        penalty_sail_length = allowable_sail_length
+
+    # 帆の大きさによるペナルティの計算
+    if tpg_ship.sail_height > penalty_sail_length:
+        sail_length_penalty = 100 * (tpg_ship.sail_height - penalty_sail_length)
+    else:
+        sail_length_penalty = 0
+
     # 総利益[億円]
     total_profit = sp_base.profit
 
-    total_pure_cost = total_cost - total_profit
-
-    # 供給拠点に輸送された電力量を取得 total_costはパラメータの過剰化防止
-    objective_value = (
-        sp_base.total_supply / (10**9)
-        - tpg_ship.minus_storage_penalty_list[-1]
-        - total_pure_cost / 100
+    # 減価償却費 耐用年数について、船は一律20年、拠点はタンク部分は20年、その他は50年とする
+    tpg_ship_depreciation_expense = tpg_ship.building_cost / 20
+    support_ship_1_depreciation_expense = support_ship_1.building_cost / 20
+    support_ship_2_depreciation_expense = support_ship_2.building_cost / 20
+    st_base_depreciation_expense = (
+        st_base.tank_total_cost / 20
+        + (st_base.building_cost - st_base.tank_total_cost) / 50
+    )
+    sp_base_depreciation_expense = (
+        sp_base.tank_total_cost / 20
+        + (sp_base.building_cost - sp_base.tank_total_cost) / 50
     )
 
-    # # 利益強め
-    # objective_value = (
-    #     total_profit - total_cost - tpg_ship.minus_storage_penalty_list[-1]
-    # )
+    # 総減価償却費[億円]
+    total_depreciation_expense = (
+        tpg_ship_depreciation_expense
+        + support_ship_1_depreciation_expense
+        + support_ship_2_depreciation_expense
+        + st_base_depreciation_expense
+        + sp_base_depreciation_expense
+    )
+
+    total_maintainance_cost = (
+        tpg_ship.maintenance_cost
+        + support_ship_1.maintenance_cost
+        + support_ship_2.maintenance_cost
+        + st_base.maintenance_cost
+        + sp_base.maintenance_cost
+    )
+
+    total_operation_cost = (
+        tpg_ship.carrier_cost
+        + support_ship_1.transportation_cost
+        + support_ship_2.transportation_cost
+    )
+
+    total_pure_profit_peryear = (
+        total_profit
+        - total_depreciation_expense
+        - total_maintainance_cost
+        - total_operation_cost
+    )
+
+    objective_value = (
+        total_pure_profit_peryear
+        - sail_length_penalty
+        - tpg_ship.minus_storage_penalty_list[-1]
+    )
 
     return objective_value
 
@@ -709,7 +767,7 @@ def simulation_result_to_df(
             "T_storage_method": [int(tpg_ship.storage_method)],
             "T_max_storage[GWh]": [float(tpg_ship.max_storage / 10**9)],
             "T_EP_max_storage_wh[GWh]": [
-                float(tpg_ship.electric_propulsion_max_storage_wh / 10**8)
+                float(tpg_ship.electric_propulsion_max_storage_wh / 10**9)
             ],
             "T_sail_num": [int(tpg_ship.sail_num)],  # Int64 型の例
             "T_sail_area[m2]": [int(tpg_ship.sail_area)],
@@ -818,15 +876,24 @@ def simulation_result_to_df(
             "T_maintenance_cost[100M JPY]": [
                 float(tpg_ship.maintenance_cost * operating_years)
             ],
+            "T_depreciation_expense[100M JPY]": [float(tpg_ship.building_cost / 20)],
             "T_total_cost[100M JPY]": [float(tpg_ship_total_cost)],
             "St_building_cost[100M JPY]": [float(st_base.building_cost)],
             "St_maintenance_cost[100M JPY]": [
                 float(st_base.maintenance_cost * operating_years)
             ],
+            "St_depreciation_expense[100M JPY]": [
+                st_base.tank_total_cost / 20
+                + (st_base.building_cost - st_base.tank_total_cost) / 50
+            ],
             "St_total_cost[100M JPY]": [float(st_base_total_cost)],
             "Sp_building_cost[100M JPY]": [float(sp_base.building_cost)],
             "Sp_maintenance_cost[100M JPY]": [
                 float(sp_base.maintenance_cost * operating_years)
+            ],
+            "Sp_depreciation_expense[100M JPY]": [
+                sp_base.tank_total_cost / 20
+                + (sp_base.building_cost - sp_base.tank_total_cost) / 50
             ],
             "Sp_total_cost[100M JPY]": [float(sp_base_total_cost)],
             "Ss1_building_cost[100M JPY]": [float(support_ship_1.building_cost)],
@@ -836,6 +903,9 @@ def simulation_result_to_df(
             "Ss1_transportation_cost[100M JPY]": [
                 float(support_ship_1.transportation_cost)
             ],
+            "Ss1_depreciation_expense[100M JPY]": [
+                float(support_ship_1.building_cost / 20)
+            ],
             "Ss1_total_cost[100M JPY]": [float(support_ship_1_total_cost)],
             "Ss2_building_cost[100M JPY]": [float(support_ship_2.building_cost)],
             "Ss2_maintenance_cost[100M JPY]": [
@@ -843,6 +913,9 @@ def simulation_result_to_df(
             ],
             "Ss2_transportation_cost[100M JPY]": [
                 float(support_ship_2.transportation_cost)
+            ],
+            "Ss2_depreciation_expense[100M JPY]": [
+                float(support_ship_2.building_cost / 20)
             ],
             "Ss2_total_cost[100M JPY]": [float(support_ship_2_total_cost)],
             "Total_maintain_cost_per_Year[100M JPY]": [
@@ -861,10 +934,20 @@ def simulation_result_to_df(
                     + support_ship_2.transportation_cost
                 )
             ],
+            "Total_depreciation_expense_per_Year[100M JPY]": [
+                float(
+                    tpg_ship.building_cost / 20
+                    + st_base.tank_total_cost / 20
+                    + (st_base.building_cost - st_base.tank_total_cost) / 50
+                    + sp_base.tank_total_cost / 20
+                    + (sp_base.building_cost - sp_base.tank_total_cost) / 50
+                    + support_ship_1.building_cost / 20
+                    + support_ship_2.building_cost / 20
+                )
+            ],
             "Total_fixed_cost[100M JPY]": [
                 float(
                     tpg_ship.building_cost
-                    + tpg_ship.carrier_cost
                     + st_base.building_cost
                     + sp_base.building_cost
                     + support_ship_1.building_cost
@@ -962,23 +1045,29 @@ def simulation_result_to_df(
             pl.col("T_building_cost[100M JPY]").cast(pl.Float64),
             pl.col("T_carrier_cost[100M JPY]").cast(pl.Float64),
             pl.col("T_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("T_depreciation_expense[100M JPY]").cast(pl.Float64),
             pl.col("T_total_cost[100M JPY]").cast(pl.Float64),
             pl.col("St_building_cost[100M JPY]").cast(pl.Float64),
             pl.col("St_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("St_depreciation_expense[100M JPY]").cast(pl.Float64),
             pl.col("St_total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Sp_building_cost[100M JPY]").cast(pl.Float64),
             pl.col("Sp_maintenance_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Sp_depreciation_expense[100M JPY]").cast(pl.Float64),
             pl.col("Sp_total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Ss1_building_cost[100M JPY]").cast(pl.Float64),
             pl.col("Ss1_maintenance_cost[100M JPY]").cast(pl.Float64),
             pl.col("Ss1_transportation_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss1_depreciation_expense[100M JPY]").cast(pl.Float64),
             pl.col("Ss1_total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Ss2_building_cost[100M JPY]").cast(pl.Float64),
             pl.col("Ss2_maintenance_cost[100M JPY]").cast(pl.Float64),
             pl.col("Ss2_transportation_cost[100M JPY]").cast(pl.Float64),
+            pl.col("Ss2_depreciation_expense[100M JPY]").cast(pl.Float64),
             pl.col("Ss2_total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Total_maintain_cost_per_Year[100M JPY]").cast(pl.Float64),
             pl.col("Total_operating_cost_per_Year[100M JPY]").cast(pl.Float64),
+            pl.col("Total_depreciation_expense_per_Year[100M JPY]").cast(pl.Float64),
             pl.col("Total_fixed_cost[100M JPY]").cast(pl.Float64),
             pl.col("Total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Total_profit[100M JPY]").cast(pl.Float64),
@@ -1094,6 +1183,7 @@ def run_simulation(cfg):
 
     # Support ship 1
     support_ship_1_supply_base_locate = cfg.supply_base.locate
+    support_ship_1_storage_method = cfg.tpg_ship.storage_method
     support_ship_1_max_storage_wh = cfg.support_ship_1.max_storage_wh
     support_ship_1_support_ship_speed = cfg.support_ship_1.ship_speed_kt
     support_ship_1_elect_trust_efficiency = cfg.support_ship_1.elect_trust_efficiency
@@ -1101,6 +1191,7 @@ def run_simulation(cfg):
         support_ship_1_EP_max_storage_wh = 0
     else:
         support_ship_1_EP_max_storage_wh = sp_ship_EP_storage_cal(
+            support_ship_1_storage_method,
             support_ship_1_max_storage_wh,
             support_ship_1_support_ship_speed,
             support_ship_1_elect_trust_efficiency,
@@ -1109,6 +1200,7 @@ def run_simulation(cfg):
         )
     support_ship_1 = support_ship.Support_ship(
         support_ship_1_supply_base_locate,
+        support_ship_1_storage_method,
         support_ship_1_max_storage_wh,
         support_ship_1_support_ship_speed,
         support_ship_1_EP_max_storage_wh,
@@ -1117,6 +1209,7 @@ def run_simulation(cfg):
 
     # Support ship 2
     support_ship_2_supply_base_locate = cfg.supply_base.locate
+    support_ship_2_storage_method = cfg.tpg_ship.storage_method
     support_ship_2_max_storage_wh = cfg.support_ship_2.max_storage_wh
     support_ship_2_support_ship_speed = cfg.support_ship_2.ship_speed_kt
     support_ship_2_elect_trust_efficiency = cfg.support_ship_2.elect_trust_efficiency
@@ -1124,6 +1217,7 @@ def run_simulation(cfg):
         support_ship_2_EP_max_storage_wh = 0
     else:
         support_ship_2_EP_max_storage_wh = sp_ship_EP_storage_cal(
+            support_ship_2_storage_method,
             support_ship_2_max_storage_wh,
             support_ship_2_support_ship_speed,
             support_ship_2_elect_trust_efficiency,
@@ -1132,6 +1226,7 @@ def run_simulation(cfg):
         )
     support_ship_2 = support_ship.Support_ship(
         support_ship_2_supply_base_locate,
+        support_ship_2_storage_method,
         support_ship_2_max_storage_wh,
         support_ship_2_support_ship_speed,
         support_ship_2_EP_max_storage_wh,
@@ -1284,11 +1379,11 @@ def objective(trial):
     # config.storage_base.locate = [stbase_lat, stbase_lon]
     # config.tpg_ship.initial_position = config.storage_base.locate
     stbase_list = [
-        [24.47, 122.98],
-        [25.83, 131.23],
-        [24.78, 141.32],
-        [20.42, 136.08],  # 与那国島  # 南大東島  # 硫黄島
-        [24.29, 153.98],  # 沖ノ鳥島  # 南鳥島
+        [24.47, 122.98],  # 与那国島
+        [25.83, 131.23],  # 南大東島
+        [24.78, 141.32],  # 硫黄島
+        [20.42, 136.08],  # 沖ノ鳥島
+        [24.29, 153.98],  # 南鳥島
     ]
     stbase_locate = trial.suggest_int("stbase_locate", 0, 4)
     config.storage_base.locate = stbase_list[stbase_locate]
@@ -1385,7 +1480,6 @@ def main(cfg: DictConfig) -> None:
     output_folder_path = HydraConfig.get().run.dir
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    # storage = "sqlite:///experiences/catmaran_journal_first_casestudy_neo.db"  # または storage = "sqlite:///path/to/your/folder/example.db"
     storage = "sqlite:///experiences/catamaran_cost_optimize_gasoline.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(

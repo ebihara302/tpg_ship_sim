@@ -345,11 +345,12 @@ class Base:
         need_capacity = (self.max_storage / 10**9) * 379
         tank_num = math.ceil(need_capacity / tank_capacity)
         # タンクのコストを計算
-        tank_total_cost = tank_cost * tank_num
+        self.tank_total_cost = tank_cost * tank_num
+        self.tank_total_cost = self.tank_total_cost / 10**8  # 単位を億円に変換
         # 入港できるようにするための拡張工事コスト(ドックも含む)を50億円とする
-        extension_cost = 5 * 10**9
+        extension_cost = 50
         # 建設コストを計算
-        self.building_cost = (tank_total_cost + extension_cost) / 10**8
+        self.building_cost = self.tank_total_cost + extension_cost
 
         # メンテナンスコストを計算。年間で建設コストの3％とする
         self.maintenance_cost = self.building_cost * 0.03
