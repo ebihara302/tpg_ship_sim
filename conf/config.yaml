@@ -9,31 +9,31 @@ tpg_ship:
   initial_position: [24,154] # 南鳥島[24.29, 153.98] # lat, lon
   hull_num: 2 # 船体の数
   storage_method: 4 # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
-  max_storage_wh: 600000000000 # 台風発電船の蓄電容量[Wh]
+  max_storage_wh: 1041000000000 # 台風発電船の蓄電容量[Wh]
   electric_propulsion_max_storage_wh: 0 # 電気推進機用の蓄電池容量[Wh]
   trust_efficiency: 0.68 # 推進機におけるエネルギーキャリアーまたは電力のエネルギー変換効率(熱効率＊伝達効率)
   carrier_to_elect_efficiency: 1.0 # エネルギーキャリアーから電気へのエネルギー変換効率 電気推進等で電気を使用しない場合はなんでも良い
   elect_to_carrier_efficiency: 0.75 # 電気からエネルギーキャリアーへの変換効率
-  generator_turbine_radius: 20 # 発電機のタービンの半径[m]
+  generator_turbine_radius: 17 # 発電機のタービンの半径[m]
   generator_efficiency: 0.3 # 発電機の効率
   generator_drag_coefficient: 0.3 # 発電機の発電時の抗力係数
   generator_pillar_chord: 5 # 発電機支柱断面の流線型物体のコード長[m]
   generator_pillar_max_tickness: 1 # 発電機支柱断面の流線型物体の最大厚さ[m]
-  generator_pillar_width: 21 # 発電機支柱の幅(船体から飛び出ている長さ)[m]
+  generator_pillar_width: 18 # 発電機支柱の幅(船体から飛び出ている長さ)[m]
   generator_num: 2 # 発電機の数
-  sail_area: 10700 # 帆の面積[m^2]
+  sail_area: 8500 # 帆の面積[m^2]
   sail_space: 2
   sail_num: 6 # 帆の数
-  sail_steps: 7 # 帆の段数
-  ship_return_speed_kt: 6 # 拠点帰港時の船速[kt]
+  sail_steps: 4 # 帆の段数
+  ship_return_speed_kt: 4 # 拠点帰港時の船速[kt]
   ship_max_speed_kt: 20 # 台風発電船の最大船速[kt]
   #TPG ship operational rule model
-  forecast_weight: 54 # 台風の評価数値の計算用重み 「評価数値　＝　予想発電時間＊(forecast_weight) - 台風補足時間＊(100 - forecast_weight)」
+  forecast_weight: 78 # 台風の評価数値の計算用重み 「評価数値　＝　予想発電時間＊(forecast_weight) - 台風補足時間＊(100 - forecast_weight)」
   typhoon_effective_range: 100 # 台風発電船が台風で発電できる台風中心からの距離[km]
-  govia_base_judge_energy_storage_per: 16 # 蓄電量がこの値を上回ると寄港判断を行う[%]
+  govia_base_judge_energy_storage_per: 35 # 蓄電量がこの値を上回ると寄港判断を行う[%]
   judge_time_times: 1.085808408 # 台風に追いつけるとみなす時間（目的地への台風の到着時間＊judge_time_times）の設定
-  operational_reserve_percentage: 2 # 台風発電船が拠点にMCH等を下す際に運航用に船内に残すMCHのmax_storage_whに対する割合[%]
-  standby_position: [8,143] # 南鳥島[24.29, 153.98] # lat, lon
+  operational_reserve_percentage: 27 # 台風発電船が拠点にMCH等を下す際に運航用に船内に残すMCHのmax_storage_whに対する割合[%]
+  standby_position: [20,136] # 南鳥島[24.29, 153.98] # lat, lon
 
 
 forecaster:
@@ -42,14 +42,14 @@ forecaster:
 
 storage_base:
   base_type: 1 # 1: 貯蔵拠点, 2: 供給拠点, 3: 兼用
-  locate: [24.29,153.98] # 南鳥島[24.29, 153.98] # lat, lon
-  max_storage_wh: 210000000000 # Wh
-  call_per: 0.00001 # 呼び出す際の貯蔵拠点の貯蔵量基準の割合[%] 貯蔵量がsupport_shipのmax_storage_whのcall_per[%]以上の場合に呼び出す
+  locate: [20.42,136.08] # 南鳥島[24.29, 153.98] # lat, lon
+  max_storage_wh: 1259190000000 # Wh
+  call_per: 46 # 呼び出す際の貯蔵拠点の貯蔵量基準の割合[%] 貯蔵量がsupport_shipのmax_storage_whのcall_per[%]以上の場合に呼び出す
 
 supply_base:
   base_type: 2 # 1: 貯蔵拠点, 2: 供給拠点, 3: 兼用
-  locate: [34.74, 134.78] # lat, lon （高砂水素パーク）
-  max_storage_wh: 35000000000 # Wh
+  locate: [35.48, 139.66] # lat, lon （高砂水素パーク）
+  max_storage_wh: 1888780000000 # Wh
   call_per: 100 # base_type=2,3の場合は無視される
 
 combined_base: # storage_baseとsupply_baseと共存できない
@@ -59,13 +59,13 @@ combined_base: # storage_baseとsupply_baseと共存できない
   call_per: 100 # base_type=2,3の場合は無視される
 
 support_ship_1:
-  max_storage_wh: 35000000000 # Wh 0の場合は船の削除となる
-  ship_speed_kt: 5 # kt
-  EP_max_storage_wh: 14200000000 # Wh
+  max_storage_wh: 124000000000 # Wh 0の場合は船の削除となる
+  ship_speed_kt: 4 # kt
+  EP_max_storage_wh: 70000000 # Wh
   elect_trust_efficiency: 0.83 # 電気推進機の効率
 
 support_ship_2:
-  max_storage_wh: 35000000000 # Wh 0の場合は船の削除となる
+  max_storage_wh: 0 # Wh 0の場合は船の削除となる
   ship_speed_kt: 5 # kt
   EP_max_storage_wh: 14200000000 # Wh
   elect_trust_efficiency: 0.83 # 電気推進機の効率

@@ -183,13 +183,15 @@ def main(cfg: DictConfig) -> None:
         output_folder_path + "/" + support_ship_1_log_file_name,
         output_folder_path + "/" + support_ship_2_log_file_name,
         output_folder_path + "/" + png_map_folder_name,
+        st_base_locate,
+        sp_base_locate,
     )
     progress_bar.update(1)
 
     utils.draw_graph(
-        typhoon_data_path,
         output_folder_path + "/" + tpg_ship_log_file_name,
         output_folder_path + "/" + storage_base_log_file_name,
+        output_folder_path + "/" + supply_base_log_file_name,
         output_folder_path + "/" + png_graph_folder_name,
     )
     progress_bar.update(1)
