@@ -6,7 +6,7 @@ env:
   
 tpg_ship:
   #TPG ship performance model
-  initial_position: [24,154] # 南鳥島[24.29, 153.98] # lat, lon
+  initial_position: [20.42,136.08] # 南鳥島[24.29, 153.98] # lat, lon
   hull_num: 2 # 船体の数
   storage_method: 4 # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
   max_storage_wh: 1041000000000 # 台風発電船の蓄電容量[Wh]

@@ -1,6 +1,7 @@
 import csv
 import math
 import os
+import traceback
 from datetime import datetime, timedelta, timezone
 
 import hydra
@@ -17,6 +18,7 @@ from tpg_ship_sim.model import base, forecaster, support_ship, tpg_ship
 
 # 起動時の出力フォルダ名を取得するためグローバル変数に設定
 output_folder_path = None
+save_dataframe = None
 
 
 # 進捗バーを更新するコールバック関数を定義
@@ -1078,7 +1080,21 @@ def simulation_result_to_df(
     return data
 
 
+def save_to_csv_on_error_or_completion(file_path):
+    """
+    save_dataframeをCSVとして保存する関数
+    """
+    global save_dataframe
+    if save_dataframe.height > 0:  # データが存在する場合のみ保存
+        save_dataframe.write_csv(file_path)
+        print(f"データを保存しました: {file_path}")
+    else:
+        print("データが存在しないため保存はスキップされました。")
+
+
 def run_simulation(cfg):
+    global output_folder_path, save_dataframe, final_csv_path
+
     typhoon_data_path = cfg.env.typhoon_data_path
     simulation_start_time = cfg.env.simulation_start_time
     simulation_end_time = cfg.env.simulation_end_time
@@ -1269,40 +1285,8 @@ def run_simulation(cfg):
         simulation_end_time,
     )
 
-    # final_csv_pathの既存ファイルにdfを追記
-    if os.path.exists(final_csv_path):
-        # ファイルが存在する場合、既存のデータを読み込む
-        existing_data = pl.read_csv(final_csv_path)
-
-        # データ型でエラーが生じるのでその対策
-        # 基本新規データの方が正しいので、データの列名と型を取得
-        expected_schema = data.schema
-        # 既存データの列名と型を取得
-        existing_schema = existing_data.schema
-        # 比較して異なる場合のエラーを表示
-        if expected_schema != existing_schema:
-            print("スキーマが異なるため、データの追記ができません。")
-            print("expected_schema: ", expected_schema)
-            print("existing_schema: ", existing_schema)
-
-            # 新規データのスキーマに合わせて既存データを変換
-            existing_data = existing_data.cast(data.schema)
-            # df2をdf1のスキーマにキャスト
-            for column_name, column_dtype in expected_schema.items():
-                if column_name in existing_data.columns:
-                    existing_data = existing_data.with_columns(
-                        existing_data[column_name].cast(column_dtype)
-                    )
-
-            print("changed existing_schema: ", expected_schema)
-
-        # 新しいデータを既存のデータに追加
-        updated_data = existing_data.vstack(data)
-        # 更新されたデータをCSVファイルに書き込む
-        updated_data.write_csv(final_csv_path)
-    else:
-        # ファイルが存在しない場合、ヘッダーを出力する
-        data.write_csv(final_csv_path)
+    # グローバルのデータフレームに追記
+    save_dataframe = save_dataframe.vstack(data)
 
     return objective_value
 
@@ -1476,8 +1460,11 @@ def objective(trial):
 @hydra.main(config_name="config", version_base=None, config_path="conf")
 def main(cfg: DictConfig) -> None:
 
-    global output_folder_path
+    global output_folder_path, save_dataframe, final_csv_path
     output_folder_path = HydraConfig.get().run.dir
+    save_dataframe = pl.DataFrame()
+    models_param_log_file_name = cfg.output_env.models_param_log_file_name
+    final_csv_path = output_folder_path + "/" + models_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
     storage = "sqlite:///experiences/catamaran_cost_optimize_MCH.db"
@@ -1497,12 +1484,25 @@ def main(cfg: DictConfig) -> None:
 
     # 進捗バーのコールバックを使用してoptimizeを実行
     trial_num = 3000
-    study.optimize(
-        objective,
-        n_trials=trial_num,
-        callbacks=[TqdmCallback(total=trial_num)],
-        n_jobs=n_jobs,
-    )
+    try:
+        # 進捗バーのコールバックを使用してoptimizeを実行
+        study.optimize(
+            objective,
+            n_trials=trial_num,
+            callbacks=[TqdmCallback(total=trial_num)],
+            n_jobs=n_jobs,
+        )
+
+    except Exception as e:
+        # エラー時の処理
+        print(f"エラーが発生しました: {e}")
+        traceback.print_exc()
+        save_to_csv_on_error_or_completion(final_csv_path)
+        raise
+
+    finally:
+        # トライアル終了時の保存
+        save_to_csv_on_error_or_completion(final_csv_path)
 
     # 最良の試行を出力
     print("Best trial:")
