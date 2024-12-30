@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 year = 2023
 start_month = 6
 end_month = 10
-num_typhoons = 18
+num_typhoons = 12
 
 # 出力ファイル名
 output_file = (
