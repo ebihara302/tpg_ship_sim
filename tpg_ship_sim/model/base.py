@@ -53,6 +53,7 @@ class Base:
     total_supply = 0
 
     # コスト関連　単位は億円
+    unit_price = 0
     building_cost = 0
     maintenance_cost = 0
     profit = 0
@@ -359,7 +360,8 @@ class Base:
         if self.base_type == 2 or self.base_type == 3:
             if TPGship1.storage_method == 1:  # 電気貯蔵 = コンテナ型
                 # 電気の売価 25円/kWhとする。
-                self.profit = (self.total_supply_list[-1] / 1000) * 25
+                self.unit_price = 25
+                self.profit = (self.total_supply_list[-1] / 1000) * self.unit_price
 
             elif TPGship1.storage_method == 2:  # MCH貯蔵 = タンカー型
                 # MCHをWhからtに変換　1GWh = 379t
@@ -367,7 +369,8 @@ class Base:
                 # MCHの価格を1tあたり水素を679[Nm3]生成するとして、量を計算
                 total_supply_hydrogen = total_supply_t * 679
                 # 水素の価格を1[Nm3]あたり20円として、利益を計算
-                self.profit = total_supply_hydrogen * 20  # 単位は円
+                self.unit_price = 20
+                self.profit = total_supply_hydrogen * self.unit_price  # 単位は円
                 self.profit = self.profit / 10**8  # 単位を億円に変換
 
             # 以下e-fuelは300JPY/Lとして計算
@@ -379,7 +382,8 @@ class Base:
                 # 0.425kg/LとしてLに変換
                 LNG_L = (LNG_t * 1000) / 0.425
                 # 利益を計算
-                self.profit = LNG_L * 300 / 10**8  # 単位を億円に変換
+                self.unit_price = 300  # 1Lあたり300円
+                self.profit = LNG_L * self.unit_price / 10**8  # 単位を億円に変換
 
             elif TPGship1.storage_method == 4:  # メタノール貯蔵 = タンカー型
                 # メタノールをWhからtに変換
@@ -391,7 +395,8 @@ class Base:
                 # 0.792kg/LとしてLに変換
                 methanol_L = (methanol_t * 1000) / 0.792
                 # 利益を計算
-                self.profit = methanol_L * 300 / 10**8
+                self.unit_price = 300  # 1Lあたり300円
+                self.profit = methanol_L * self.unit_price / 10**8
 
             elif TPGship1.storage_method == 5:  # e-ガソリン貯蔵 = タンカー型
                 # e-ガソリンをWhからtに変換
@@ -404,7 +409,8 @@ class Base:
                 # 0.75kg/LとしてLに変換
                 gasoline_L = (gasoline_t * 1000) / 0.75
                 # 利益を計算
-                self.profit = gasoline_L * 300 / 10**8
+                self.unit_price = 300  # 1Lあたり300円
+                self.profit = gasoline_L * self.unit_price / 10**8
 
             else:
                 self.profit = 0

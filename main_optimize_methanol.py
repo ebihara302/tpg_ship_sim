@@ -667,11 +667,21 @@ def objective_value_calculation(
         - total_operation_cost
     )
 
-    objective_value = (
-        total_pure_profit_peryear
-        - sail_length_penalty
-        - tpg_ship.minus_storage_penalty_list[-1]
-    )
+    # ペナルティの合計を計算
+    total_penalty = sail_length_penalty + tpg_ship.minus_storage_penalty_list[-1]
+
+    # 目的関数の値を計算
+    # ECの単価を最小化する場合
+    unit_price = sp_base.unit_price  # 供給拠点売却時の単価[円]
+    income = total_pure_profit_peryear - total_penalty
+    # 営業利益が0円(利益はないが操業が続けられる)の時の単価を計算
+    if total_profit == 0:
+        appropriate_unit_price = (total_profit - income) * unit_price
+    else:
+        appropriate_unit_price = ((total_profit - income) / total_profit) * unit_price
+
+    # 目的関数の値を計算
+    objective_value = appropriate_unit_price
 
     return objective_value
 
@@ -958,6 +968,7 @@ def simulation_result_to_df(
             ],
             "Total_cost[100M JPY]": [float(total_cost)],
             "Total_profit[100M JPY]": [float(total_profit)],
+            "Unit_price[JPY]": [float(sp_base.unit_price)],
             "Objective_value": [
                 float(
                     objective_value_calculation(
@@ -1073,6 +1084,7 @@ def simulation_result_to_df(
             pl.col("Total_fixed_cost[100M JPY]").cast(pl.Float64),
             pl.col("Total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Total_profit[100M JPY]").cast(pl.Float64),
+            pl.col("Unit_price[JPY]").cast(pl.Float64),
             pl.col("Objective_value").cast(pl.Float64),
         ]
     )
@@ -1367,6 +1379,7 @@ def objective(trial):
     ]
     stbase_locate = trial.suggest_int("stbase_locate", 0, 4)
     config.storage_base.locate = stbase_list[stbase_locate]
+    config.tpg_ship.initial_position = config.storage_base.locate
     # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
     stbase_max_storage_ton_100k = trial.suggest_int(
         "stbase_max_storage_ton_100k", 1, 15
@@ -1468,7 +1481,7 @@ def main(cfg: DictConfig) -> None:
     study = optuna.create_study(
         study_name="example-study",
         storage=storage,
-        direction="maximize",
+        direction="minimize",
         load_if_exists=True,
     )
 
