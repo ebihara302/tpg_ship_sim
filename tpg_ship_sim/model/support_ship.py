@@ -502,7 +502,6 @@ class Support_ship:
         distance = self.get_distance(storage_base_position)
         storagebase_ship_dis_time = distance / self.change_kt_kmh(self.speed_kt)
         self.arrived_storagebase = 0
-        self.arrived_supplybase = 0
 
         # 消費電力の計算
         consumption_elect = (
@@ -514,9 +513,7 @@ class Support_ship:
                 self.batttery_method,
             )
             / self.elect_trust_efficiency
-        ) * (
-            distance / self.change_kt_kmh(self.support_ship_speed)
-        )  # 移動距離に対する消費電力の計算
+        ) * time_step  # 移動距離に対する消費電力の計算
         self.total_consumption_elect = (
             self.total_consumption_elect + consumption_elect
         )  # Totalの消費電力の記録
@@ -577,15 +574,13 @@ class Support_ship:
         consumption_elect = (
             self.cal_maxspeedpower(
                 self.speed_kt,
-                self.storage,
+                self.max_storage,
                 self.storage_method,
                 self.EP_max_storage,
                 self.batttery_method,
             )
             / self.elect_trust_efficiency
-        ) * (
-            distance / self.change_kt_kmh(self.support_ship_speed)
-        )  # 移動距離に対する消費電力の計算
+        ) * time_step  # 移動距離に対する消費電力の計算
         self.total_consumption_elect = (
             self.total_consumption_elect + consumption_elect
         )  # Totalの消費電力の記録
@@ -627,9 +622,6 @@ class Support_ship:
 
     def get_next_ship_state(self, storage_base_position, year, current_time, time_step):
 
-        # 移動まえの船の座標を取得
-        position_before = [self.ship_lat, self.ship_lon]
-
         if (self.arrived_storagebase == 0) and (self.arrived_supplybase == 1):
             self.go_storagebase_action(storage_base_position, time_step)
         elif (self.arrived_storagebase == 1) and (self.arrived_supplybase == 0):
@@ -647,37 +639,6 @@ class Support_ship:
             # 目標地点との距離
             target_position = (self.target_lat, self.target_lon)
             self.target_distance = self.get_distance(target_position)
-
-        # 移動後の船の座標を取得
-        position_after = [self.ship_lat, self.ship_lon]
-
-        # 船の座標が変わった場合のみ消費電力を計算する
-        if position_after != position_before:
-            # 現在位置と次の位置の距離を計算して、船速を用いて航行時間を計算して消費電力を計算する
-            # distance = geodesic(position_before, position_after).km
-            # consumption_elect = (
-            #     self.cal_maxspeedpower(
-            #         self.speed_kt,
-            #         self.storage,
-            #         self.storage_method,
-            #         self.EP_max_storage,
-            #         self.batttery_method,
-            #     )
-            #     / self.elect_trust_efficiency
-            # ) * (distance / self.change_kt_kmh(self.support_ship_speed))
-            # self.total_consumption_elect = self.total_consumption_elect + consumption_elect
-            # self.EP_storage = self.EP_storage - consumption_elect
-            self.total_received_elect = self.total_received_elect
-
-        else:
-            if self.EP_storage < self.EP_max_storage:
-                self.total_received_elect += self.EP_max_storage - self.EP_storage
-                self.total_consumption_elect += 0
-                self.EP_storage = self.EP_max_storage
-
-            else:
-                self.total_received_elect += 0
-                self.total_consumption_elect += 0
 
     # コンテナ型の船体寸法計算
     def calculate_LB_container(self, total_ship_weight_per_body):

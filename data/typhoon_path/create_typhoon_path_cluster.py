@@ -168,7 +168,8 @@ def compute_months_per_cluster_with_counts(df, labels):
         for month in filtered_df["MONTH"].unique().to_list():
             if month not in months_per_cluster[cluster_id]:
                 months_per_cluster[cluster_id][month] = 0
-            months_per_cluster[cluster_id][month] += 1
+            else:
+                months_per_cluster[cluster_id][month] += 1
 
     # 辞書のキーをソートして整形
     sorted_months_per_cluster = {
