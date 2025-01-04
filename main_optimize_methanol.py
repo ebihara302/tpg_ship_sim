@@ -605,9 +605,9 @@ def objective_value_calculation(
 
     # 帆の大きさによるペナルティ
     sail_length_penalty = 0
-    max_sail_length = 175.0  # 今までの検証結果でそれらしい値となるものを設定した[m]
+    max_sail_length = 180.0  # 今までの検証結果でそれらしい値となるものを設定した[m]
     allowable_sail_length = (
-        tpg_ship.hull_B * 1.8
+        tpg_ship.hull_B * 1.3
     )  # 許容される帆の大きさ[m] 船体の幅の1.8倍とする
     # ペナルティが生じる帆の長さを決める
     if allowable_sail_length > max_sail_length:
@@ -1312,7 +1312,7 @@ def objective(trial):
     config.tpg_ship.storage_method = 4  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
-        "tpgship_max_storage_GWh", 50, 1500
+        "tpgship_max_storage_GWh", 50, 1000
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
@@ -1488,7 +1488,7 @@ def main(cfg: DictConfig) -> None:
     # ログ出力を無効化　ターミナルが落ちることがあったため予防措置
     optuna.logging.disable_default_handler()
 
-    n_jobs = int(os.cpu_count())
+    n_jobs = int(os.cpu_count() - 2)
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
