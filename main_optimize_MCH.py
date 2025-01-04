@@ -621,6 +621,13 @@ def objective_value_calculation(
     else:
         sail_length_penalty = 0
 
+    # 供給拠点への輸送が行われなかった時のペナルティ
+    supply_zero_penalty = 0
+    if sp_base.total_supply_list[-1] == 0:
+        supply_zero_penalty = 500
+    else:
+        supply_zero_penalty = 0
+
     # 総利益[億円]
     total_profit = sp_base.profit
 
@@ -668,7 +675,7 @@ def objective_value_calculation(
     )
 
     # ペナルティの合計を計算
-    total_penalty = sail_length_penalty + tpg_ship.minus_storage_penalty_list[-1]
+    total_penalty = sail_length_penalty + tpg_ship.minus_storage_penalty_list[-1] + supply_zero_penalty
 
     # 目的関数の値を計算
     # ECの単価を最小化する場合
