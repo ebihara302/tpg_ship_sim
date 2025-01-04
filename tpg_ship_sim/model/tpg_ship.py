@@ -1131,6 +1131,7 @@ class TPG_ship:
         self.total_loss_elect_list = []  # 総消費電力
         self.balance_gene_elect_list = []  # 発電収支（船内蓄電量）
         self.per_timestep_gene_elect_list = []  # 時間幅あたりの発電量
+        self.per_timestep_gene_carrier_list = []  # 時間幅あたりの生産エネルギーキャリア
         self.per_timestep_loss_elect_list = []  # 時間幅あたりの消費電力
         # self.year_round_balance_gene_elect_list = []  # 通年発電収支
         self.sum_supply_elect_list = []  # 総供給電力量
@@ -1188,6 +1189,9 @@ class TPG_ship:
         self.per_timestep_gene_elect_list.append(
             float(self.gene_elect)
         )  # 時間幅あたりの発電量[Wh]
+        self.per_timestep_gene_carrier_list.append(
+            float(self.gene_carrier)
+        )  # 時間幅あたりの生産エネルギーキャリア[Wh]
         self.gene_elect_time_list.append(float(self.total_gene_time))  # 発電時間[hour]
         self.total_gene_elect_list.append(float(self.total_gene_elect))  # 総発電量[Wh]
         self.total_gene_carrier_list.append(
@@ -1299,6 +1303,7 @@ class TPG_ship:
                 "TPGSHIP STATUS": self.GS_state_list,
                 "SHIP SPEED[kt]": self.GS_speed_list,
                 "TIMESTEP POWER GENERATION[Wh]": self.per_timestep_gene_elect_list,
+                "TIMESTEP CARRIER GENERATION[Wh]": self.per_timestep_gene_carrier_list,
                 "TOTAL GENE TIME[h]": self.gene_elect_time_list,
                 "TOTAL POWER GENERATION[Wh]": self.total_gene_elect_list,
                 "TOTAL GENE CARRIER[Wh]": self.total_gene_carrier_list,
