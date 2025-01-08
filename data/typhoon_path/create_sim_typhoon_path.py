@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 year = 2023
 start_month = 6
 end_month = 10
-num_typhoons = 12
+num_typhoons = 13
 
 # 出力ファイル名
 output_file = (
@@ -75,6 +75,8 @@ def generate_typhoon_trajectories(
         (end_month - start_month + 1) * 30 * 24
     )  # 月ごとの平均日数を30日と仮定
     interval_hours = total_hours / num_typhoons
+    # 6時間刻みに修正
+    interval_hours = round(interval_hours / 6) * 6
 
     # 発生時刻を計算 (UTCタイムゾーンを適用)
     typhoon_times = [
