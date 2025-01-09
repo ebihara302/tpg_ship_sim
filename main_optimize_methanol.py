@@ -1345,7 +1345,7 @@ def objective(trial):
         0.75  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     )
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
-    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 200)
+    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 100)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
     # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
     config.tpg_ship.sail_steps = trial.suggest_int("tpgship_sail_steps", 1, 7)
@@ -1408,7 +1408,6 @@ def objective(trial):
     # 拠点位置に関する変更
     # 候補となる場所のリストから選択する
     spbase_list = [
-        [34.74, 134.78],  # 高砂水素パーク
         [35.48, 139.66],  # ENEOS横浜製造所
         [38.27, 141.04],  # ENEOS仙台製油所
         [34.11, 135.11],  # ENEOS和歌山製造所
