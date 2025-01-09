@@ -1323,7 +1323,7 @@ def objective(trial):
     config.tpg_ship.storage_method = 3  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
-        "tpgship_max_storage_GWh", 50, 1500
+        "tpgship_max_storage_GWh", 50, 1000
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
@@ -1345,7 +1345,7 @@ def objective(trial):
         0.80  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     )
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
-    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 200)
+    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 100)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
     # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
     config.tpg_ship.sail_steps = trial.suggest_int("tpgship_sail_steps", 1, 7)
@@ -1408,13 +1408,12 @@ def objective(trial):
     # 拠点位置に関する変更
     # 候補となる場所のリストから選択する
     spbase_list = [
-        [34.74, 134.78],  # 高砂水素パーク
         [35.48, 139.66],  # ENEOS横浜製造所
         [38.27, 141.04],  # ENEOS仙台製油所
         [34.11, 135.11],  # ENEOS和歌山製造所
         [33.28, 131.69],  # ENEOS大分製油所
     ]
-    spbase_locate = trial.suggest_int("spbase_locate", 0, 4)
+    spbase_locate = trial.suggest_int("spbase_locate", 0, 3)
     config.supply_base.locate = spbase_list[spbase_locate]
     # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
     spbase_max_storage_ton_100k = trial.suggest_int(
@@ -1431,7 +1430,7 @@ def objective(trial):
 
     # 貯蔵量に関する変更
     support_ship_1_max_storage_GWh = trial.suggest_int(
-        "support_ship_1_max_storage_GWh", 10, 1500
+        "support_ship_1_max_storage_GWh", 10, 700
     )
     config.support_ship_1.max_storage_wh = support_ship_1_max_storage_GWh * 1000000000
     # 船速に関する変更
@@ -1453,7 +1452,7 @@ def objective(trial):
 
     # 貯蔵量に関する変更
     support_ship_2_max_storage_GWh = trial.suggest_int(
-        "support_ship_2_max_storage_GWh", 0, 1500
+        "support_ship_2_max_storage_GWh", 0, 700
     )
     config.support_ship_2.max_storage_wh = support_ship_2_max_storage_GWh * 1000000000
     # 船速に関する変更
