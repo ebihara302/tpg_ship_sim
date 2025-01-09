@@ -1393,7 +1393,7 @@ def objective(trial):
     config.tpg_ship.initial_position = config.storage_base.locate
     # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
     stbase_max_storage_ton_100k = trial.suggest_int(
-        "stbase_max_storage_ton_100k", 1, 15
+        "stbase_max_storage_ton_100k", 1, 5
     )
     stbase_max_storage_ton = stbase_max_storage_ton_100k * 100000
     config.storage_base.max_storage_wh = tank_capacity_ton_to_wh(
@@ -1413,11 +1413,11 @@ def objective(trial):
         [34.11, 135.11],  # ENEOS和歌山製造所
         [33.28, 131.69],  # ENEOS大分製油所
     ]
-    spbase_locate = trial.suggest_int("spbase_locate", 0, 4)
+    spbase_locate = trial.suggest_int("spbase_locate", 0, 3)
     config.supply_base.locate = spbase_list[spbase_locate]
     # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
     spbase_max_storage_ton_100k = trial.suggest_int(
-        "spbase_max_storage_ton_100k", 1, 15
+        "spbase_max_storage_ton_100k", 1, 5
     )
     spbase_max_storage_ton = spbase_max_storage_ton_100k * 100000
     config.supply_base.max_storage_wh = tank_capacity_ton_to_wh(
@@ -1430,7 +1430,7 @@ def objective(trial):
 
     # 貯蔵量に関する変更
     support_ship_1_max_storage_GWh = trial.suggest_int(
-        "support_ship_1_max_storage_GWh", 10, 1500
+        "support_ship_1_max_storage_GWh", 10, 700
     )
     config.support_ship_1.max_storage_wh = support_ship_1_max_storage_GWh * 1000000000
     # 船速に関する変更
@@ -1452,7 +1452,7 @@ def objective(trial):
 
     # 貯蔵量に関する変更
     support_ship_2_max_storage_GWh = trial.suggest_int(
-        "support_ship_2_max_storage_GWh", 0, 1500
+        "support_ship_2_max_storage_GWh", 0, 700
     )
     config.support_ship_2.max_storage_wh = support_ship_2_max_storage_GWh * 1000000000
     # 船速に関する変更
