@@ -365,7 +365,7 @@ class Base:
         # 以下e-fuelは300JPY/Lとして計算
         elif TPGship1.storage_method == 3:  # メタン貯蔵 = LNG船型
             # 10万トン貯蔵できるタンクのコストを60億円とする
-            tank_cost = 60**9
+            tank_cost = 6.0 * 10**9
             # LNGをWhからtに変換
             LNG_mol = self.max_storage / ((802 / 3600) * 1000)
             # メタンの分子量16.04g/molを用いてtに変換
@@ -378,7 +378,7 @@ class Base:
 
         elif TPGship1.storage_method == 4:  # メタノール貯蔵 = タンカー型
             # 10万トン貯蔵できるタンクのコストを30億円とする
-            tank_cost = 30**9
+            tank_cost = 3.0 * 10**9
             # メタノールをWhからtに変換
             # 物性より計算　メタノール1molの完全燃焼で726.2kJ=726.2/3600kWh
             # mol数の計算
