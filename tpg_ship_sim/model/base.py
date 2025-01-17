@@ -427,9 +427,6 @@ class Base:
                 self.profit = (self.total_supply_list[-1] / 1000) * self.unit_price
 
             elif TPGship1.storage_method == 2:  # MCH貯蔵 = タンカー型
-                # 10万トン貯蔵できるタンクのコストを10億円とする
-                tank_cost = 10**9
-
                 # MCHをWhからtに変換　1GWh = 379t
                 total_supply_t = self.total_supply_list[-1] / 10**9 * 379
                 # MCHの価格を1tあたり水素を679[Nm3]生成するとして、量を計算
@@ -441,9 +438,6 @@ class Base:
 
             # 以下e-fuelは300JPY/Lとして計算
             elif TPGship1.storage_method == 3:  # メタン貯蔵 = LNG船型
-                # 10万トン貯蔵できるタンクのコストを60億円とする
-                tank_cost = 60**9
-
                 # LNGをWhからtに変換
                 LNG_mol = self.total_supply_list[-1] / ((802 / 3600) * 1000)
                 # メタンの分子量16.04g/molを用いてtに変換
@@ -455,9 +449,6 @@ class Base:
                 self.profit = LNG_L * self.unit_price / 10**8  # 単位を億円に変換
 
             elif TPGship1.storage_method == 4:  # メタノール貯蔵 = タンカー型
-                # 10万トン貯蔵できるタンクのコストを30億円とする
-                tank_cost = 30**9
-
                 # メタノールをWhからtに変換
                 # 物性より計算　メタノール1molの完全燃焼で726.2kJ=726.2/3600kWh
                 # mol数の計算
@@ -471,9 +462,6 @@ class Base:
                 self.profit = methanol_L * self.unit_price / 10**8
 
             elif TPGship1.storage_method == 5:  # e-ガソリン貯蔵 = タンカー型
-                # 10万トン貯蔵できるタンクのコストを10億円とする
-                tank_cost = 10**9
-
                 # e-ガソリンをWhからtに変換
                 # 代表の分子としてC8H18（オクタン）を用いる
                 # オクタン1molの完全燃焼で5500kJ=5500/3600kWh
