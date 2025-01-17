@@ -3090,9 +3090,8 @@ class TPG_ship:
         if self.storage_method == 1:  # 電気貯蔵(コンテナ型)
             # 船体価格+甲板補強価格[円]
             self.hull_cost = (
-                0.00483 * (self.ship_dwt**0.878) * 10**6 * 160
-                + 500000 * self.hull_L_oa * self.hull_B
-            )
+                0.00483 * ((self.ship_dwt / self.hull_num) ** 0.878) * 10**6 * 160
+            ) * self.hull_num + 500000 * self.hull_L_oa * self.hull_B
             # 関連プラントの価格[円]
             Plant_cost = 0
             # エネルギーキャリア関連のコスト[億円]
@@ -3103,9 +3102,8 @@ class TPG_ship:
 
         elif self.storage_method == 2:  # MCH貯蔵
             self.hull_cost = (
-                0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
-                + 500000 * self.hull_L_oa * self.hull_B
-            )
+                0.212 * ((self.ship_dwt / self.hull_num) ** 0.5065) * 10**6 * 160
+            ) * self.hull_num + 500000 * self.hull_L_oa * self.hull_B
             # 関連プラントの価格[円]
             Plant_cost = 5.0 * 10**9
             # エネルギーキャリア関連のコスト[円]
@@ -3116,9 +3114,8 @@ class TPG_ship:
 
         elif self.storage_method == 3:  # メタン貯蔵
             self.hull_cost = (
-                4.41 * 0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
-                + 500000 * self.hull_L_oa * self.hull_B
-            )  # LNG船の補正あり
+                4.41 * 0.212 * ((self.ship_dwt / self.hull_num) ** 0.5065) * 10**6 * 160
+            ) * self.hull_num + 500000 * self.hull_L_oa * self.hull_B  # LNG船の補正あり
             # 関連プラントの価格[円]
             Plant_cost = 7.5 * 10**9  # メタン生成＋液化プラント
             # エネルギーキャリア関連のコスト[円]
@@ -3135,9 +3132,8 @@ class TPG_ship:
 
         elif self.storage_method == 4:  # メタノール貯蔵
             self.hull_cost = (
-                0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
-                + 500000 * self.hull_L_oa * self.hull_B
-            )  # タンカーと同価格
+                0.212 * ((self.ship_dwt / self.hull_num) ** 0.5065) * 10**6 * 160
+            ) * self.hull_num + 500000 * self.hull_L_oa * self.hull_B  # タンカーと同価格
             # 関連プラントの価格[円]
             Plant_cost = 6.0 * 10**9  # メタノール生成＋ケミカルタンカーの補正あり
             # エネルギーキャリア関連のコスト[円]
@@ -3154,9 +3150,8 @@ class TPG_ship:
 
         elif self.storage_method == 5:  # e-ガソリン貯蔵
             self.hull_cost = (
-                0.212 * (self.ship_dwt**0.5065) * 10**6 * 160
-                + 500000 * self.hull_L_oa * self.hull_B
-            )  # タンカーと同価格
+                0.212 * ((self.ship_dwt / self.hull_num) ** 0.5065) * 10**6 * 160
+            ) * self.hull_num + 500000 * self.hull_L_oa * self.hull_B  # タンカーと同価格
             # 関連プラントの価格[円]
             Plant_cost = 5.0 * 10**9  # ガソリン生成プラント
             # エネルギーキャリア関連のコスト[円]
