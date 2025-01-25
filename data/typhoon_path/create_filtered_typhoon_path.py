@@ -4,8 +4,8 @@ import polars as pl
 
 # 初期入力
 # 読み込み関連
-start_year = 2012
-end_year = 2023
+start_year = 2020
+end_year = 2020
 start_month = 6
 end_month = 10
 # folder_path = "typhoon_path"
@@ -59,6 +59,13 @@ def load_and_filter_typhoon_data(year, start_month, end_month):
         filtered_df = pl.concat(filtered_data)
     else:
         filtered_df = pl.DataFrame()
+
+    # TYPHOON NUMBERの振り直し
+    typhoon_numbers = filtered_df["TYPHOON NUMBER"].unique().to_numpy()
+    typhoon_number_map = {typhoon_number: f"{year % 100:02d}{i+1:02d}" for i, typhoon_number in enumerate(typhoon_numbers)}
+    filtered_df = filtered_df.with_columns(
+        pl.col("TYPHOON NUMBER").apply(lambda x: typhoon_number_map.get(x, x)).alias("TYPHOON NUMBER")
+    )
 
     return filtered_df
 

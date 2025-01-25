@@ -19,6 +19,7 @@ from tpg_ship_sim.model import base, forecaster, support_ship, tpg_ship
 # 起動時の出力フォルダ名を取得するためグローバル変数に設定
 output_folder_path = None
 save_dataframe = None
+sim_year = int(2020)
 
 
 # 進捗バーを更新するコールバック関数を定義
@@ -551,16 +552,11 @@ def objective_value_calculation(
 
     #############################################################################
     """
-    # コスト計算(損失)
-    # 運用年数　simulation_start_time、simulation_end_time (ex."2023-01-01 00:00:00")から年数を計算 365で割って端数切り上げ
-    operating_years = math.ceil(
-        (
-            datetime.strptime(simulation_end_time, "%Y-%m-%d %H:%M:%S")
-            - datetime.strptime(simulation_start_time, "%Y-%m-%d %H:%M:%S")
-        ).days
-        / 365
-    )
-    # print(f"運用年数: {operating_years}年")
+    # コスト計算
+    # 台風発電船関連[億円]
+    tpg_ship.cost_calculate()
+    # 供給拠点関連[億円]
+    sp_base.cost_calculate(tpg_ship)
 
     # 帆の大きさによるペナルティ
     sail_length_penalty = 0
@@ -587,6 +583,7 @@ def objective_value_calculation(
     else:
         supply_zero_penalty = 0
 
+
     # 総利益[億円]
     total_profit = sp_base.profit
 
@@ -594,17 +591,11 @@ def objective_value_calculation(
     tpg_ship_depreciation_expense = tpg_ship.building_cost / 20
 
     # 総減価償却費[億円]
-    total_depreciation_expense = (
-        tpg_ship_depreciation_expense
-    )
+    total_depreciation_expense = tpg_ship_depreciation_expense
 
-    total_maintainance_cost = (
-        tpg_ship.maintenance_cost
-    )
+    total_maintainance_cost = tpg_ship.maintenance_cost
 
-    total_operation_cost = (
-        tpg_ship.carrier_cost
-    )
+    total_operation_cost = tpg_ship.carrier_cost
 
     total_pure_profit_peryear = (
         total_profit
@@ -1246,11 +1237,15 @@ def run_simulation(cfg):
 # 探索範囲の指定用関数
 # 探索範囲の指定用関数
 def objective(trial):
+    global sim_year
+
     config = hydra.compose(config_name="config")
 
     config.env.typhoon_data_path = (
-        "data/typhoon_path/filtered_typhoon_path/filtered_typhoon_data_2020.csv"
+        f"data/typhoon_path/filtered_typhoon_path/filtered_typhoon_data_{sim_year}.csv"
     )
+    config.env.simulation_start_time = f"{sim_year}-05-15 00:00:00"
+    config.env.simulation_end_time = f"{sim_year}-11-15 00:00:00"
 
     ############ TPG shipのパラメータを指定 ############
 
@@ -1376,14 +1371,14 @@ def objective(trial):
 @hydra.main(config_name="config", version_base=None, config_path="conf")
 def main(cfg: DictConfig) -> None:
 
-    global output_folder_path, save_dataframe, final_csv_path
+    global output_folder_path, save_dataframe, final_csv_path, sim_year
     output_folder_path = HydraConfig.get().run.dir
     save_dataframe = pl.DataFrame()
     models_param_log_file_name = cfg.output_env.models_param_log_file_name
     final_csv_path = output_folder_path + "/" + models_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = "sqlite:///experiences/catamaran_optimize_MCH_2020c.db"
+    storage = f"sqlite:///experiences/catamaran_optimize_MCH_{sim_year}c.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
@@ -1399,7 +1394,7 @@ def main(cfg: DictConfig) -> None:
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 1000
+    trial_num = 5
     try:
         # 進捗バーのコールバックを使用してoptimizeを実行
         study.optimize(
