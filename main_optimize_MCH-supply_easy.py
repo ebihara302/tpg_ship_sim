@@ -1239,7 +1239,7 @@ def objective(trial):
     config.tpg_ship.storage_method = 2  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
-        "tpgship_max_storage_GWh", 200, 1000
+        "tpgship_max_storage_GWh", 350, 600
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
@@ -1361,7 +1361,7 @@ def main(cfg: DictConfig) -> None:
     final_csv_path = output_folder_path + "/" + models_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = f"sqlite:///experiences/catamaran_optimize_MCH_{sim_year}c.db"
+    storage = f"sqlite:///experiences/catamaran_optimize_MCH_{sim_year}s.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",

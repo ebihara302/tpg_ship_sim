@@ -583,7 +583,6 @@ def objective_value_calculation(
     else:
         supply_zero_penalty = 0
 
-
     # 総利益[億円]
     total_profit = sp_base.profit
 
@@ -1256,7 +1255,7 @@ def objective(trial):
     config.tpg_ship.storage_method = 2  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
-        "tpgship_max_storage_GWh", 200, 1000
+        "tpgship_max_storage_GWh", 350, 600
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
@@ -1390,11 +1389,11 @@ def main(cfg: DictConfig) -> None:
     # ログ出力を無効化　ターミナルが落ちることがあったため予防措置
     optuna.logging.disable_default_handler()
 
-    n_jobs = int((os.cpu_count()))
+    n_jobs = int((os.cpu_count()) - 2)
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 5
+    trial_num = 3000
     try:
         # 進捗バーのコールバックを使用してoptimizeを実行
         study.optimize(
