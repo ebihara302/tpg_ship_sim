@@ -552,9 +552,25 @@ def objective_value_calculation(
 
     #############################################################################
     """
-    # コスト計算
+    # コスト計算(損失)
+    # 運用年数　simulation_start_time、simulation_end_time (ex."2023-01-01 00:00:00")から年数を計算 365で割って端数切り上げ
+    operating_years = math.ceil(
+        (
+            datetime.strptime(simulation_end_time, "%Y-%m-%d %H:%M:%S")
+            - datetime.strptime(simulation_start_time, "%Y-%m-%d %H:%M:%S")
+        ).days
+        / 365
+    )
+    # print(f"運用年数: {operating_years}年")
+
     # 台風発電船関連[億円]
     tpg_ship.cost_calculate()
+    # サポート船1関連[億円]
+    support_ship_1.cost_calculate()
+    # サポート船2関連[億円]
+    support_ship_2.cost_calculate()
+    # 貯蔵拠点関連[億円]
+    st_base.cost_calculate(tpg_ship)
     # 供給拠点関連[億円]
     sp_base.cost_calculate(tpg_ship)
 
@@ -611,7 +627,17 @@ def objective_value_calculation(
     )
 
     # 目的関数の値を計算
-    objective_value = total_pure_profit_peryear - total_penalty
+    # ECの単価を最小化する場合
+    unit_price = sp_base.unit_price  # 供給拠点売却時の単価[円]
+    income = total_pure_profit_peryear - total_penalty
+    # 営業利益が0円(利益はないが操業が続けられる)の時の単価を計算
+    if total_profit == 0:
+        appropriate_unit_price = (total_profit - income) * unit_price
+    else:
+        appropriate_unit_price = ((total_profit - income) / total_profit) * unit_price
+
+    # 目的関数の値を計算
+    objective_value = appropriate_unit_price
 
     return objective_value
 
