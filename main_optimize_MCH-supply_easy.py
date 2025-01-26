@@ -591,6 +591,7 @@ def objective_value_calculation(
     # ペナルティの合計を計算
     total_penalty = (
         sail_length_penalty
+        + ((tpg_ship.max_storage_wh / 10**9) / 20)
         + tpg_ship.minus_storage_penalty_list[-1]
         + supply_zero_penalty
     )
@@ -710,9 +711,6 @@ def simulation_result_to_df(
         appropriate_unit_price = (total_profit - income) * unit_price
     else:
         appropriate_unit_price = ((total_profit - income) / total_profit) * unit_price
-
-
-
 
     data = pl.DataFrame(
         {
