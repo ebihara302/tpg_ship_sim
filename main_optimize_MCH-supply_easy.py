@@ -686,6 +686,34 @@ def simulation_result_to_df(
     # 総利益[億円]
     total_profit = sp_base.profit
 
+    # 減価償却費 耐用年数について、船は一律20年、拠点はタンク部分は20年、その他は50年とする
+    tpg_ship_depreciation_expense = tpg_ship.building_cost / 20
+
+    # 総減価償却費[億円]
+    total_depreciation_expense = tpg_ship_depreciation_expense
+
+    total_maintainance_cost = tpg_ship.maintenance_cost
+
+    total_operation_cost = tpg_ship.carrier_cost
+
+    total_pure_profit_peryear = (
+        total_profit
+        - total_depreciation_expense
+        - total_maintainance_cost
+        - total_operation_cost
+    )
+
+    unit_price = sp_base.unit_price  # 供給拠点売却時の単価[円]
+    income = total_pure_profit_peryear
+    # 営業利益が0円(利益はないが操業が続けられる)の時の単価を計算
+    if total_profit == 0:
+        appropriate_unit_price = (total_profit - income) * unit_price
+    else:
+        appropriate_unit_price = ((total_profit - income) / total_profit) * unit_price
+
+
+
+
     data = pl.DataFrame(
         {
             # TPG ship (列名の先頭にT_を付与。探索しないものはコメントアウト)
@@ -884,6 +912,7 @@ def simulation_result_to_df(
             "Total_cost[100M JPY]": [float(total_cost)],
             "Total_profit[100M JPY]": [float(total_profit)],
             "Unit_price[JPY]": [float(sp_base.unit_price)],
+            "Ideal_unit_price[JPY]": [float(appropriate_unit_price)],
             "Objective_value": [
                 float(
                     objective_value_calculation(
@@ -1000,6 +1029,7 @@ def simulation_result_to_df(
             pl.col("Total_cost[100M JPY]").cast(pl.Float64),
             pl.col("Total_profit[100M JPY]").cast(pl.Float64),
             pl.col("Unit_price[JPY]").cast(pl.Float64),
+            pl.col("Ideal_unit_price[JPY]").cast(pl.Float64),
             pl.col("Objective_value").cast(pl.Float64),
         ]
     )
