@@ -591,7 +591,7 @@ def objective_value_calculation(
     # ペナルティの合計を計算
     total_penalty = (
         sail_length_penalty
-        + ((tpg_ship.max_storage_wh / 10**9) / 20)
+        + ((tpg_ship.max_storage / 10**9) / 20)
         + tpg_ship.minus_storage_penalty_list[-1]
         + supply_zero_penalty
     )
@@ -1401,7 +1401,7 @@ def main(cfg: DictConfig) -> None:
     # ログ出力を無効化　ターミナルが落ちることがあったため予防措置
     optuna.logging.disable_default_handler()
 
-    n_jobs = int((os.cpu_count()))
+    n_jobs = int((os.cpu_count()) - 2)
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
