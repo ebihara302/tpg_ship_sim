@@ -1389,7 +1389,7 @@ def main(cfg: DictConfig) -> None:
     # ログ出力を無効化　ターミナルが落ちることがあったため予防措置
     optuna.logging.disable_default_handler()
 
-    n_jobs = int((os.cpu_count()) - 2)
+    n_jobs = int((os.cpu_count()))
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
