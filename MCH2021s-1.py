@@ -1388,7 +1388,7 @@ def main(cfg: DictConfig) -> None:
     final_csv_path = output_folder_path + "/" + models_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = f"sqlite:///experiences/MCH_{sim_year}s.db"
+    storage = f"sqlite:///experiences/MDAITO_{sim_year}s.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
