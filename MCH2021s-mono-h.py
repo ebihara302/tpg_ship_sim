@@ -562,7 +562,7 @@ def objective_value_calculation(
     sail_length_penalty = 0
     max_sail_length = 180.0  # 今までの検証結果でそれらしい値となるものを設定した[m]
     allowable_sail_length = (
-        tpg_ship.hull_B * 1.8
+        tpg_ship.hull_B * 3.0
     )  # 許容される帆の大きさ[m] 船体の幅の1.8倍とする
     # ペナルティが生じる帆の長さを決める
     if allowable_sail_length > max_sail_length:
