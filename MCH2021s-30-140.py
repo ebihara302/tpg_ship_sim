@@ -1341,7 +1341,7 @@ def objective(trial):
         [25, 165],
         [25, 170],
     ]
-    stbase_locate = 0
+    stbase_locate = 1
     config.storage_base.locate = stbase_list[stbase_locate]
     config.tpg_ship.initial_position = config.storage_base.locate
     # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
@@ -1399,7 +1399,7 @@ def main(cfg: DictConfig) -> None:
     final_csv_path = output_folder_path + "/" + models_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = f"sqlite:///experiences/MCH_{sim_year}s-35-140.db"
+    storage = f"sqlite:///experiences/MCH_{sim_year}s-30-140.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
