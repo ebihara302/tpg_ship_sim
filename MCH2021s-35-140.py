@@ -1263,32 +1263,31 @@ def objective(trial):
 
     # config.tpg_ship.hull_num = trial.suggest_int("hull_num", 1, 2)
     # 1: 電気(コンテナ型), 2: MCH(タンカー型), 3: メタン(LNG船型), 4: メタノール(ケミカルタンカー型), 5: e-ガソリン(タンカー型)
-    config.tpg_ship.storage_method = 5  # trial.suggest_int("storage_method", 1, 5)
+    config.tpg_ship.storage_method = 2  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
-        "tpgship_max_storage_GWh", 50, 1000
+        "tpgship_max_storage_GWh", 550, 700
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
-    # EP_max_storage_GWh_10 = trial.suggest_int(
-    #     "tpgship_EP_max_storage_GWh_10", 5, 200
-    # )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
-    # config.tpg_ship.electric_propulsion_max_storage_wh = (
-    #     EP_max_storage_GWh_10 * 100000000
-    # )
-    config.tpg_ship.electric_propulsion_max_storage_wh = 0.0
+    EP_max_storage_GWh_10 = trial.suggest_int(
+        "tpgship_EP_max_storage_GWh_10", 0, 100
+    )  # electric_propulsion_max_storage_whの刻み幅は10^8とする
+    config.tpg_ship.electric_propulsion_max_storage_wh = (
+        EP_max_storage_GWh_10 * 10000000
+    )
 
     config.tpg_ship.trust_efficiency = (
-        0.68  # trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
+        0.83  # trial.suggest_float("tpgship_elect_trust_efficiency", 0.7, 0.9)
     )
     config.tpg_ship.carrier_to_elect_efficiency = (
-        1.0  # trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
+        0.5  # trial.suggest_float("tpgship_MCH_to_elect_efficiency", 0.4, 0.6)
     )
     config.tpg_ship.elect_to_carrier_efficiency = (
-        0.40  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
+        0.80  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     )
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
-    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 50, 100)
+    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 100, 115)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
     # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
     config.tpg_ship.sail_steps = trial.suggest_int("tpgship_sail_steps", 1, 7)
@@ -1296,14 +1295,14 @@ def objective(trial):
         "tpgship_return_speed_kt", 4, 20
     )
     config.tpg_ship.generator_turbine_radius = trial.suggest_int(
-        "tpgship_generator_turbine_radius", 5, 25
+        "tpgship_generator_turbine_radius", 17, 22
     )
     config.tpg_ship.forecast_weight = trial.suggest_int(
         "tpgship_forecast_weight", 10, 90
     )
     # config.tpg_ship.typhoon_effective_range = trial.suggest_int("typhoon_effective_range", 50, 150)
     config.tpg_ship.govia_base_judge_energy_storage_per = trial.suggest_int(
-        "tpgship_govia_base_judge_energy_storage_per", 10, 90
+        "tpgship_govia_base_judge_energy_storage_per", 10, 40
     )
     config.tpg_ship.judge_time_times = trial.suggest_float(
         "tpgship_judge_time_times", 1.0, 2.0
@@ -1325,13 +1324,24 @@ def objective(trial):
     # config.storage_base.locate = [stbase_lat, stbase_lon]
     # config.tpg_ship.initial_position = config.storage_base.locate
     stbase_list = [
-        [24.47, 122.98],  # 与那国島
-        [25.83, 131.23],  # 南大東島
-        [24.78, 141.32],  # 硫黄島
-        [20.42, 136.08],  # 沖ノ鳥島
-        [24.29, 153.98],  # 南鳥島
+        [35, 140],
+        [30, 140],
+        [25, 140],
+        [20, 140],
+        [15, 140],
+        [10, 140],
+        [5, 140],
+        [25, 125],
+        [25, 130],
+        [25, 135],
+        [25, 145],
+        [25, 150],
+        [25, 155],
+        [25, 160],
+        [25, 165],
+        [25, 170],
     ]
-    stbase_locate = 4
+    stbase_locate = 0
     config.storage_base.locate = stbase_list[stbase_locate]
     config.tpg_ship.initial_position = config.storage_base.locate
     # 貯蔵量に関する変更 (先に10万トン単位で決めてから1GWhあたり379トンとしてWhに変換)
@@ -1389,7 +1399,7 @@ def main(cfg: DictConfig) -> None:
     final_csv_path = output_folder_path + "/" + models_param_log_file_name
 
     # ローカルフォルダに保存するためのストレージURLを指定します。
-    storage = f"sqlite:///experiences/GAS_{sim_year}s.db"
+    storage = f"sqlite:///experiences/MCH_{sim_year}s.db"
     # スタディの作成または既存のスタディのロード
     study = optuna.create_study(
         study_name="example-study",
@@ -1405,7 +1415,7 @@ def main(cfg: DictConfig) -> None:
     print(f"Number of CPUs: {n_jobs}")
 
     # 進捗バーのコールバックを使用してoptimizeを実行
-    trial_num = 3000
+    trial_num = 500
     try:
         # 進捗バーのコールバックを使用してoptimizeを実行
         study.optimize(
