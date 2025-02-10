@@ -1266,7 +1266,7 @@ def objective(trial):
     config.tpg_ship.storage_method = 2  # trial.suggest_int("storage_method", 1, 5)
 
     max_storage_GWh = trial.suggest_int(
-        "tpgship_max_storage_GWh", 550, 700
+        "tpgship_max_storage_GWh", 500, 800
     )  # max_storage_whの刻み幅は10^9とする
     config.tpg_ship.max_storage_wh = max_storage_GWh * 1000000000
 
@@ -1287,18 +1287,18 @@ def objective(trial):
         0.80  # trial.suggest_float("tpgship_elect_to_MCH_efficiency", 0.7, 0.9)
     )
     # config.tpg_ship.sail_num = trial.suggest_int("tpgship_sail_num", 10, 60)
-    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 100, 115)
+    sail_area_100m2 = trial.suggest_int("tpgship_sail_area_every_100m2", 90, 120)
     config.tpg_ship.sail_area = sail_area_100m2 * 100
     # config.tpg_ship.sail_space = trial.suggest_float("sail_space", 2, 4)
-    config.tpg_ship.sail_steps = trial.suggest_int("tpgship_sail_steps", 1, 7)
+    config.tpg_ship.sail_steps = trial.suggest_int("tpgship_sail_steps", 4, 7)
     config.tpg_ship.ship_return_speed_kt = trial.suggest_int(
         "tpgship_return_speed_kt", 4, 20
     )
     config.tpg_ship.generator_turbine_radius = trial.suggest_int(
-        "tpgship_generator_turbine_radius", 17, 22
+        "tpgship_generator_turbine_radius", 12, 25
     )
     config.tpg_ship.forecast_weight = trial.suggest_int(
-        "tpgship_forecast_weight", 10, 90
+        "tpgship_forecast_weight", 30, 70
     )
     # config.tpg_ship.typhoon_effective_range = trial.suggest_int("typhoon_effective_range", 50, 150)
     config.tpg_ship.govia_base_judge_energy_storage_per = trial.suggest_int(
