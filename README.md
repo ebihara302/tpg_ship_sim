@@ -11,10 +11,19 @@ TPG ship is typhoon power generation ship which is a novel and future movable de
 ```shell
 $ python main.py
 ```
-
 - This simulator is developed based on [Hydra](https://hydra.cc/).
-- You can change the setting of this simulator by editing [conf/config.yaml](conf/config.yaml)
 - Typhoon track history data is stored in the [data](data) folder.
+
+For normal use
+- You can change the setting of this simulator by editing [conf/config.yaml](conf/config.yaml)
+
+For use in optimisation
+```shell
+$ python main_optimize.py
+```
+- You can change the objective function and design variables by editing [main_optimize.py](main_optimize.py)
+
+There is another program with different settings in [customisation_examples](customisation_examples)
 
 ## Citation
 
