@@ -119,16 +119,18 @@ def create_movie(images_folder, output_folder_path, fps=24):
 def draw_map(
     typhoon_data_path,
     tpg_ship_result_path,
-    strorage_base_result_path,
+    storage_base_result_path,
     support_ship_1_result_path,
     support_ship_2_result_path,
     output_folder_path,
+    stbase_position,
+    spbase_position,
 ):
 
     # データの読み込み
     typhoon_data = pl.read_csv(typhoon_data_path)
     ship_typhoon_route_data = pl.read_csv(tpg_ship_result_path)
-    stBASE_data = pl.read_csv(strorage_base_result_path)
+    stBASE_data = pl.read_csv(storage_base_result_path)
     spSHIP1_data = pl.read_csv(support_ship_1_result_path)
     spSHIP2_data = pl.read_csv(support_ship_2_result_path)
 
@@ -190,13 +192,13 @@ def draw_map(
             )
 
         # 中継貯蔵拠点&待機位置
-        base_lat = 24
-        base_lon = 153
-        ax.plot(base_lon, base_lat, "crimson", markersize=15, marker="d")
+        stbase_lat = stbase_position[0]
+        stbase_lon = stbase_position[1]
+        ax.plot(stbase_lon, stbase_lat, "crimson", markersize=15, marker="d")
 
         # 供給拠点
-        spbase_lat = 34.75
-        spbase_lon = 134.79
+        spbase_lat = spbase_position[0]
+        spbase_lon = spbase_position[1]
         ax.plot(spbase_lon, spbase_lat, "crimson", markersize=20, marker="*")
 
         # 陸地境界の設定
@@ -610,18 +612,18 @@ def draw_map(
 
 
 def draw_graph(
-    typhoon_data_path,
     tpg_ship_result_path,
-    strorage_base_result_path,
+    storage_base_result_path,
+    supply_base_result_path,
     # support_ship_1_result_path,
     # support_ship_2_result_path,
     output_folder_path,
 ):
 
     # データの読み込み
-    typhoon_data = pl.read_csv(typhoon_data_path)
     TPGship_data = pl.read_csv(tpg_ship_result_path)
-    stBASE_data = pl.read_csv(strorage_base_result_path)
+    stBASE_data = pl.read_csv(storage_base_result_path)
+    spBASE_data = pl.read_csv(supply_base_result_path)
 
     # グラフ保存用のフォルダがなければ作成
     os.makedirs(output_folder_path, exist_ok=True)
@@ -629,7 +631,7 @@ def draw_graph(
     UTC = timezone(timedelta(hours=+0), "UTC")
 
     # データの整理
-    totalgene = TPGship_data["TOTAL POWER GENERATION[Wh]"]
+    totalgene = spBASE_data["TOTAL SUPPLY[Wh]"]
     tg = []
     for i in range(len(totalgene)):
         tg.append(totalgene[i] / 10**9)
@@ -685,21 +687,21 @@ def draw_graph(
 
     ax1 = fig.add_subplot(3, 1, 1)
     ax1_xmin, ax1_xmax = 0, operation_days
-    ax1_ymin, ax1_ymax = 0, onboardene_100 / 10**9 + 5
+    ax1_ymin, ax1_ymax = 0, max_gene
     ax1.set_xlim(xmin=ax1_xmin, xmax=ax1_xmax)  # x軸の範囲を指定
     ax1.set_ylim(ymin=ax1_ymin, ymax=ax1_ymax)  # y軸の範囲を指定
     ax1.set(xlabel="Operation Time[Day]")  # x軸のラベル
-    ax1.set(ylabel="Onboard Power Storage[GWh]")  # y軸のラベル
-    ax1.plot(daylist, obe, label="ONBOARD", linewidth=3)
+    ax1.set(ylabel="Total EC Supply[GWh]")  # y軸のラベル
+    ax1.plot(daylist, tg, label="TOTAL", linewidth=3)
 
     ax2 = fig.add_subplot(3, 1, 2)
     ax2_xmin, ax2_xmax = 0, operation_days
-    ax2_ymin, ax2_ymax = 0, max_gene
+    ax2_ymin, ax2_ymax = 0, onboardene_100 / 10**9 + 5
     ax2.set_xlim(xmin=ax2_xmin, xmax=ax2_xmax)  # x軸の範囲を指定
     ax2.set_ylim(ymin=ax2_ymin, ymax=ax2_ymax)  # y軸の範囲を指定
     ax2.set(xlabel="Operation Time[Day]")  # x軸のラベル
-    ax2.set(ylabel="Power Generation[GWh]")  # y軸のラベル
-    ax2.plot(daylist, tg, label="TOTAL", linewidth=3)
+    ax2.set(ylabel="Onboard Power Storage[GWh]")  # y軸のラベル
+    ax2.plot(daylist, obe, label="ONBOARD", linewidth=3)
 
     ax3 = fig.add_subplot(3, 1, 3)
     ax3_xmin, ax3_xmax = 0, operation_days
@@ -707,7 +709,7 @@ def draw_graph(
     ax3.set_xlim(xmin=ax3_xmin, xmax=ax3_xmax)  # x軸の範囲を指定
     ax3.set_ylim(ymin=ax3_ymin, ymax=ax3_ymax)  # y軸の範囲を指定
     ax3.set(xlabel="Operation Time[Day]")  # x軸のラベル
-    ax3.set(ylabel="Electric at Storage Base[GWh]")  # y軸のラベル
+    ax3.set(ylabel="EC at Storage Base[GWh]")  # y軸のラベル
     ax3.plot(daylist, base_data, label="BASE OPERATION", linewidth=3)
 
     for j in tqdm(range(len(TPGship_data)), desc="Drawing graph"):
